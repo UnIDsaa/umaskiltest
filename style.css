@@ -121,7 +121,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 .skill-name { font-weight: bold; }
 .skill-tag { display: inline-block; background-color: var(--border-color); color: var(--gray-dark); font-size: 0.75em; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
 .skill-source { font-size: 0.8em; color: var(--gray-dark); margin-top: 2px; }
-.skill-checkbox { min-width: 24px; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 0 2px transparent; border: 2px solid var(--border-color); -webkit-appearance: none; appearance: none; outline: none; position: relative; }
+.skill-checkbox { min-width: 24px; width: 24px; height: 24px; border-radius: 50%; transition: all 0.2s; box-shadow: 0 0 0 2px transparent; border: 2px solid var(--border-color); -webkit-appearance: none; appearance: none; outline: none; position: relative; }
 .skill-checkbox[data-state="0"] { background-color: var(--checkbox-state0); }
 .skill-checkbox[data-state="1"] { background-color: var(--checkbox-state1); border-color: transparent; }
 .skill-checkbox[data-state="2"] { background-color: var(--checkbox-state2); border-color: transparent; font-weight: bold; color: white; }
@@ -158,12 +158,11 @@ input:checked + .slider:before { transform: translateX(20px); }
 #modal-save-btn, #skill-search-confirm-btn { background-color: var(--primary-color); color: white; }
 #skill-search-cancel-btn { background-color: var(--gray-dark); color: white; }
 
-
 /* === Collection Modal Styles === */
 #collection-view-container { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;}
 .collection-header { padding: 0 20px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
 .collection-tabs { display: flex; }
-.collection-tabs .tab-btn { padding: 15px 25px; border: none; background-color: transparent; color: var(--gray-dark); cursor: pointer; font-size: 1.2em; font-weight: bold; border-bottom: 3px solid transparent; }
+.collection-tabs .tab-btn { padding: 15px 25px; border: none; background-color: transparent; color: var(--gray-dark); cursor: pointer; font-size: 1.2em; font-weight: bold; border-bottom: 3px solid transparent; transition: color 0.2s, border-color 0.2s; }
 .collection-tabs .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
 .collection-main, .collection-form-view { display: flex; flex-direction: column; padding: 20px; flex-grow: 1; overflow-y: auto; }
 .collection-actions { display: flex; gap: 15px; margin-bottom: 20px; flex-shrink: 0; }
@@ -174,15 +173,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 .collection-item-info .name { font-weight: bold; }
 .collection-item-info .details { font-size: 0.9em; color: var(--gray-dark); }
 .collection-item-actions { display: flex; align-items: center; gap: 10px; }
+.collection-item-actions .view-btn { background-color: var(--primary-color); color: white; }
 .collection-item-actions .edit-btn { background-color: var(--accent-color); color: #333; }
 .collection-item-actions .delete-btn { background-color: var(--danger-color); color: white; }
 .collection-item-actions button { border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-
 
 /* Form Styles */
 .form-field { display: flex; flex-direction: column; gap: 5px; }
 .form-field label { font-weight: bold; }
 .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); }
+.form-field input:disabled, .form-field select:disabled, .form-field textarea:disabled { background-color: var(--border-color); color: var(--gray-dark); cursor: not-allowed; }
 .form-field textarea { resize: vertical; min-height: 80px; }
 .form-field .skill-search-btn { margin-top: 5px; padding: 6px 10px; align-self: flex-start; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
@@ -195,4 +195,4 @@ input:checked + .slider:before { transform: translateX(20px); }
 .factor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
 .inza-search-results { margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; }
 .inza-search-item { padding: 10px; cursor: pointer; }
-.inza-search-item:hover { background-color: var(--bg-color); }
+.inza-search-item:hover, .inza-search-item.selected { background-color: var(--bg-color); }

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const USER_DB_KEY = 'umaSkillChecker_userData_v11';
+    const USER_DB_KEY = 'umaSkillChecker_userData_v12';
     let DB = {
         master: {},
         user: {}
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createDefaultUserData() {
         return {
-            version: "1.1.0",
+            version: "1.2.0",
             userSettings: { theme: 'light', hideAcquired: false, showDetails: false, clickArea: 'checkbox', lastCollectionTab: 'sc' },
             customData: { skills: [], supportCards: [], inzaCharacters: [] },
             myCollection: { supportCards: [], inzaCharacters: [] },
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMasterData() {
         try {
-            const response = await fetch('masterData.json?v=1.1.0');
+            const response = await fetch('masterData.json?v=1.2.0');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return await response.json();
         } catch (error) {
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getCardLevelInfo(userCard) {
         if (!userCard) return { text: '', hintLevel: 0 };
         
-        const masterCard = DB.master.supportCards.find(c => c.masterCardId === userCard.masterCardId) || 
+        const masterCard = (DB.master.supportCards || []).find(c => c.masterCardId === userCard.masterCardId) || 
                          (DB.user.customData.supportCards || []).find(c => c.masterCardId === userCard.masterCardId);
         
         let hintLevel = userCard.hintLevel || 0; // 커스텀 카드의 경우
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getSkillData(skillId) {
         if (!skillId) return null;
-        return DB.master.skills.find(s => s.skillId === skillId) || 
+        return (DB.master.skills || []).find(s => s.skillId === skillId) || 
                (DB.user.customData.skills || []).find(s => s.skillId === skillId);
     }
     
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         let html = '';
-        if (Object.keys(obtainableSkills).length === 0) {
+        if (Object.keys(obtainableSkills).length === 0 && lists.acquired.length === 0) {
             html = '<p class="placeholder">덱을 편성하면 획득 가능한 스킬 목록이 여기에 표시됩니다.</p>';
         } else {
             const groupsInOrder = [
@@ -205,12 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            if (!html && lists.acquired.length > 0 && hideAcquired) {
+            if (!html && hideAcquired) {
                  html = '<p class="placeholder">획득할 스킬이 없거나 모두 획득했습니다.</p>';
             }
         }
         
-        skillListContainer.innerHTML = html || '<p class="placeholder">획득할 스킬이 없거나 모두 획득했습니다.</p>';
+        skillListContainer.innerHTML = html || '<p class="placeholder">덱을 편성해주세요.</p>';
         acquiredSkillsContainer.innerHTML = createSubGroupHtml(lists.acquired);
         acquiredSkillsSection.hidden = (lists.acquired.length === 0);
         acquiredSkillsSection.open = !hideAcquired && lists.acquired.length > 0;
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <button class="skill-checkbox ${checkboxClickClass}" data-state="${state}"></button>
                     </div>
-                    ${detailsHtml ? `<div class="skill-details">${detailsHtml}</div>` : ''}
+                    ${detailsHtml ? `<div class="details">${detailsHtml}</div>` : ''}
                 </div>`;
         }).join('');
     }
@@ -421,10 +421,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const scList = (DB.user.myCollection.supportCards || []).map(card => {
             const levelInfo = getCardLevelInfo(card);
+            const masterCard = (DB.master.supportCards || []).find(c => c.masterCardId === card.masterCardId) || 
+                             (DB.user.customData.supportCards || []).find(c => c.masterCardId === card.masterCardId);
+            const isCustom = masterCard?.isCustom || false;
+
             return `
             <div class="collection-item" data-id="${card.userCardId}" data-type="sc">
                 <div class="collection-item-info">
-                    <span class="name">${card.name}</span>
+                    <span class="name">${card.name} ${isCustom ? '(커스텀)' : ''}</span>
                     <div class="details">${levelInfo.text}</div>
                 </div>
                 <div class="collection-item-actions">
@@ -434,14 +438,23 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
         }).join('') || '<p>보유한 서포트 카드가 없습니다.</p>';
 
-        const inzaList = (DB.user.myCollection.inzaCharacters || []).map(inza => `
+        const inzaList = (DB.user.myCollection.inzaCharacters || []).map(inza => {
+            const masterInza = (DB.master.inzaCharacters || []).find(i => i.masterInzaId === inza.masterInzaId) || 
+                             (DB.user.customData.inzaCharacters || []).find(i => i.masterInzaId === inza.masterInzaId);
+            const isCustom = masterInza?.isCustom || false;
+            const actionButton = isCustom 
+                ? `<button class="edit-btn" data-action="edit">편집</button>`
+                : `<button class="view-btn" data-action="view">보기</button>`;
+            
+            return `
             <div class="collection-item" data-id="${inza.userInzaId}" data-type="inza">
-                <div class="collection-item-info"><span class="name">${inza.name}</span></div>
+                <div class="collection-item-info"><span class="name">${inza.name} ${isCustom ? '(커스텀)' : ''}</span></div>
                 <div class="collection-item-actions">
-                    <button class="edit-btn" data-action="edit">편집</button>
+                    ${actionButton}
                     <button class="delete-btn" data-action="delete">삭제</button>
                 </div>
-            </div>`).join('') || '<p>보유한 인자가 없습니다.</p>';
+            </div>`;
+        }).join('') || '<p>보유한 인자가 없습니다.</p>';
 
         return `
             <div class="collection-header">
@@ -459,19 +472,18 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
     }
 
-    function getAddMasterScViewHTML() {
-        const masterOptions = DB.master.supportCards.map(c => `<option value="${c.masterCardId}">${c.name}</option>`).join('');
+    function getEditMasterScViewHTML(cardData) {
         const levelOptions = [
             {val: 4, text: "4돌파 (풀돌)"}, {val: 3, text: "3돌파"}, {val: 2, text: "2돌파"}, {val: 1, text: "1돌파"}, {val: 0, text: "0돌파 (명함)"}
-        ].map(o => `<option value="${o.val}">${o.text}</option>`).join('');
-        
+        ].map(o => `<option value="${o.val}" ${cardData.level == o ? 'selected' : ''}>${o.text}</option>`).join('');
+
         return `
-            <form class="collection-form-view">
-                <h3>기존 서포트 카드 추가</h3>
+             <form class="collection-form-view" data-editing-id="${cardData.userCardId}">
+                <h3>기존 서포트 카드 편집</h3>
                 <div class="form-grid">
                     <div class="form-field">
-                        <label for="master-sc-select">카드 선택</label>
-                        <select id="master-sc-select" required>${masterOptions}</select>
+                        <label for="master-sc-name">카드 이름</label>
+                        <input type="text" id="master-sc-name" value="${cardData.name}" disabled>
                     </div>
                     <div class="form-field">
                         <label for="master-sc-level">돌파 레벨</label>
@@ -480,9 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="form-actions">
                     <button type="button" class="cancel-btn">취소</button>
-                    <button type="submit" class="save-btn">컬렉션에 추가</button>
+                    <button type="submit" class="save-btn">저장</button>
                 </div>
-            </form>`;
+            </form>
+        `;
     }
 
     function getAddMasterInzaViewHTML() {
@@ -504,18 +517,19 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function getAddCustomScViewHTML(cardData = null) {
-        const isEdit = !!cardData;
+    function getCustomScViewHTML(cardData = null, isEdit = false) {
         const hintOptions = [5,4,3,2,1].map(o => `<option value="${o}" ${cardData?.hintLevel == o ? 'selected' : ''}>${o}레벨</option>`).join('');
         const allSkills = [...DB.master.skills, ...(DB.user.customData.skills || [])];
         
         const getSkillNames = (skillIds) => (skillIds || []).map(id => allSkills.find(s => s.skillId === id)?.name).filter(Boolean).join('\n');
         
-        const hintSkillsText = isEdit ? getSkillNames(cardData.hintSkills) : '';
-        const eventSkillsText = isEdit ? getSkillNames(cardData.eventSkills) : '';
+        const hintSkillIds = cardData?.hintSkills || [];
+        const eventSkillIds = cardData?.eventSkills || [];
+        const hintSkillsText = getSkillNames(hintSkillIds);
+        const eventSkillsText = getSkillNames(eventSkillIds);
 
         return `
-            <form class="collection-form-view" data-editing-id="${isEdit ? cardData.userCardId || cardData.masterCardId : ''}">
+            <form class="collection-form-view" data-editing-id="${isEdit ? cardData.masterCardId : ''}">
                 <h3>${isEdit ? '커스텀 서포트 카드 편집' : '커스텀 서포트 카드 생성'}</h3>
                 <div class="form-grid">
                     <div class="form-field">
@@ -529,13 +543,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="form-field">
                         <label for="custom-sc-hint-skills">힌트 스킬 목록</label>
                         <textarea id="custom-sc-hint-skills" rows="4" placeholder="예: 코너회복
-직접 입력하거나 아래 버튼으로 검색">${hintSkillsText}</textarea>
-                        <button type="button" class="skill-search-btn">스킬 검색</button>
+직접 입력하거나 아래 버튼으로 검색" readonly>${hintSkillsText}</textarea>
+                        <button type="button" class="skill-search-btn" data-target-textarea="custom-sc-hint-skills">스킬 검색</button>
                     </div>
                     <div class="form-field">
                         <label for="custom-sc-event-skills">이벤트 획득 스킬 목록</label>
-                        <textarea id="custom-sc-event-skills" rows="4" placeholder="예: 물고 늘어지기">${eventSkillsText}</textarea>
-                        <button type="button" class="skill-search-btn">스킬 검색</button>
+                        <textarea id="custom-sc-event-skills" rows="4" placeholder="예: 물고 늘어지기" readonly>${eventSkillsText}</textarea>
+                        <button type="button" class="skill-search-btn" data-target-textarea="custom-sc-event-skills">스킬 검색</button>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -545,8 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </form>`;
     }
     
-    function getAddCustomInzaViewHTML(inzaData = null) {
-        const isEdit = !!inzaData;
+    function getInzaViewHTML(inzaData, isViewOnly = false) {
         const factorTypes = {
             blue: ['스피드', '스태미나', '파워', '근성', '지능'],
             red: ['더트', '단거리', '마일', '중거리', '장거리', '도주', '선행', '선입', '추입'],
@@ -555,6 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const slots = ['parent', 'grandparent1', 'grandparent2'];
         const slotNames = {'parent': '부모', 'grandparent1': '조부모 1', 'grandparent2': '조부모 2'};
         const allSkills = [...DB.master.skills, ...(DB.user.customData.skills || [])];
+        const disabledAttr = isViewOnly ? 'disabled' : '';
 
         const getSkillNames = (skillIds) => (skillIds || []).map(id => allSkills.find(s => s.skillId === id)?.name).filter(Boolean).join('\n');
 
@@ -566,64 +580,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="inza-char-name-${slotId}">캐릭터 이름</label>
-                        <input type="text" id="inza-char-name-${slotId}" placeholder="예: 키타산 블랙" value="${slotData.name || ''}">
+                        <input type="text" id="inza-char-name-${slotId}" placeholder="예: 키타산 블랙" value="${slotData.name || ''}" ${disabledAttr}>
                     </div>
                     <div class="factor-grid">
                         <div class="form-field">
                             <label>청인자</label>
-                            <select id="inza-blue-type-${slotId}"><option value="">-타입-</option>${factorTypes.blue.map(t=>`<option value="${t}" ${slotData.blue?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
-                            <select id="inza-blue-star-${slotId}"><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.blue?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                            <select id="inza-blue-type-${slotId}" ${disabledAttr}><option value="">-타입-</option>${factorTypes.blue.map(t=>`<option value="${t}" ${slotData.blue?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+                            <select id="inza-blue-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.blue?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
                         </div>
                         <div class="form-field">
                             <label>적인자</label>
-                            <select id="inza-red-type-${slotId}"><option value="">-타입-</option>${factorTypes.red.map(t=>`<option value="${t}" ${slotData.red?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
-                            <select id="inza-red-star-${slotId}"><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.red?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                            <select id="inza-red-type-${slotId}" ${disabledAttr}><option value="">-타입-</option>${factorTypes.red.map(t=>`<option value="${t}" ${slotData.red?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+                            <select id="inza-red-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.red?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
                         </div>
                         <div class="form-field">
                             <label>녹인자 (선택)</label>
-                            <input type="text" id="inza-green-skill-${slotId}" placeholder="스킬명" value="${getSkillData(slotData.green?.skillId)?.name || ''}">
-                            <select id="inza-green-star-${slotId}"><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.green?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                            <input type="text" id="inza-green-skill-${slotId}" placeholder="스킬명" value="${getSkillData(slotData.green?.skillId)?.name || ''}" ${disabledAttr}>
+                            <select id="inza-green-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.green?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
                         </div>
                     </div>
                     <div class="form-field">
                         <label for="inza-skills-${slotId}">스킬 인자 목록</label>
-                        <textarea id="inza-skills-${slotId}" rows="3" placeholder="예: 코너달인">${getSkillNames(slotData.skillFactors)}</textarea>
-                        <button type="button" class="skill-search-btn">스킬 검색</button>
+                        <textarea id="inza-skills-${slotId}" rows="3" placeholder="예: 코너달인" ${isViewOnly ? 'readonly' : ''}>${getSkillNames(slotData.skillFactors)}</textarea>
+                        ${!isViewOnly ? `<button type="button" class="skill-search-btn" data-target-textarea="inza-skills-${slotId}">스킬 검색</button>` : ''}
                     </div>
                 </div>
             </div>
         `}).join('');
 
+        const title = isViewOnly ? '마스터 인자 상세 보기' : (inzaData ? '커스텀 인자 세트 편집' : '커스텀 인자 세트 생성');
+        const saveButton = !isViewOnly ? `<button type="submit" class="save-btn">저장</button>` : '';
+
         return `
-             <form class="collection-form-view inza-custom-form" data-editing-id="${isEdit ? inzaData.userInzaId || inzaData.masterInzaId : ''}">
-                <h3>${isEdit ? '커스텀 인자 세트 편집' : '커스텀 인자 세트 생성'}</h3>
+             <form class="collection-form-view inza-custom-form" data-editing-id="${inzaData?.masterInzaId || ''}">
+                <h3>${title}</h3>
                  <div class="form-field">
                     <label for="custom-inza-set-name">인자 세트 이름</label>
-                    <input type="text" id="custom-inza-set-name" required placeholder="예: 나의 결전용 보드카 인자" value="${inzaData?.name || ''}">
+                    <input type="text" id="custom-inza-set-name" required placeholder="예: 나의 결전용 보드카 인자" value="${inzaData?.name || ''}" ${disabledAttr}>
                 </div>
                 ${slotForms}
                 <div class="form-actions">
-                    <button type="button" class="cancel-btn">취소</button>
-                    <button type="submit" class="save-btn">저장</button>
+                    <button type="button" class="cancel-btn">${isViewOnly ? '닫기' : '취소'}</button>
+                    ${saveButton}
                 </div>
             </form>
         `;
     }
 
     // --- 스킬 검색 모달 로직 ---
-    let currentSkillTextarea = null;
-    let skillSearchSelectedIds = new Set();
+    let currentEditingSkillIds = new Set();
+    let onSkillSearchConfirm = null;
     
-    function openSkillSearchModal(textareaElement) {
-        currentSkillTextarea = textareaElement;
-        const existingSkillNames = textareaElement.value.split('\n').map(s => s.trim()).filter(Boolean);
-        const allSkills = [...DB.master.skills, ...(DB.user.customData.skills || [])];
-        
-        skillSearchSelectedIds.clear();
-        existingSkillNames.forEach(name => {
-            const skill = allSkills.find(s => s.name === name);
-            if (skill) skillSearchSelectedIds.add(skill.skillId);
-        });
+    function openSkillSearchModal(initialSkillIds, callback) {
+        currentEditingSkillIds = new Set(initialSkillIds);
+        onSkillSearchConfirm = callback;
 
         renderSkillSearchModal();
         skillSearchModal.style.display = 'flex';
@@ -642,15 +652,15 @@ document.addEventListener('DOMContentLoaded', () => {
             : allSkills;
             
         allSkillsListEl.innerHTML = filteredSkills.map(s => `
-            <div class="modal-skill-item ${skillSearchSelectedIds.has(s.skillId) ? 'selected' : ''}" data-skill-id="${s.skillId}">
+            <div class="modal-skill-item ${currentEditingSkillIds.has(s.skillId) ? 'selected' : ''}" data-skill-id="${s.skillId}">
                 <span>${s.name} ${s.isCustom ? '(커스텀)' : ''}</span>
                 <div class="actions">
-                    <button data-action="add-skill">${skillSearchSelectedIds.has(s.skillId) ? '✓' : '+'}</button>
+                    <button data-action="add-skill">${currentEditingSkillIds.has(s.skillId) ? '✓' : '+'}</button>
                 </div>
             </div>
         `).join('');
         
-        selectedSkillsListEl.innerHTML = [...skillSearchSelectedIds].map(id => {
+        selectedSkillsListEl.innerHTML = [...currentEditingSkillIds].map(id => {
             const skill = allSkills.find(s => s.skillId === id);
             return skill ? `
                 <div class="modal-skill-item" data-skill-id="${id}">
@@ -659,8 +669,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>` : '';
         }).join('') || '<p>선택된 스킬이 없습니다.</p>';
         
-        selectedCountEl.textContent = skillSearchSelectedIds.size;
-        searchInput.value = searchTerm;
+        selectedCountEl.textContent = currentEditingSkillIds.size;
+        if(document.activeElement !== searchInput) searchInput.value = searchTerm;
     }
     
     function handleSkillSearchModalClick(e) {
@@ -672,34 +682,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const action = target.dataset.action;
 
         if (action === 'add-skill' || (!action && target.tagName !== 'BUTTON')) {
-            if (skillSearchSelectedIds.has(skillId)) {
-                skillSearchSelectedIds.delete(skillId);
+            if (currentEditingSkillIds.has(skillId)) {
+                currentEditingSkillIds.delete(skillId);
             } else {
-                skillSearchSelectedIds.add(skillId);
+                currentEditingSkillIds.add(skillId);
             }
         } else if (action === 'remove-skill') {
-            skillSearchSelectedIds.delete(skillId);
+            currentEditingSkillIds.delete(skillId);
         }
         
         renderSkillSearchModal(document.getElementById('skill-search-input').value);
     }
     
     // --- 컬렉션 관리 로직 ---
+    let formSkillState = {};
     function renderCollectionView(viewName, params = {}) {
         let html = '';
+        formSkillState = {}; // 뷰가 바뀔 때마다 초기화
         switch(viewName) {
             case 'main': html = getCollectionMainViewHTML(params.activeTab || 'sc'); break;
-            case 'addMasterSc': html = getAddMasterScViewHTML(); break;
+            case 'addMasterSc': html = getEditMasterScViewHTML(params.data); break;
             case 'addMasterInza': html = getAddMasterInzaViewHTML(); break;
-            case 'addCustomSc': html = getAddCustomScViewHTML(params.data); break;
-            case 'addCustomInza': html = getAddCustomInzaViewHTML(params.data); break;
+            case 'viewMasterInza': html = getInzaViewHTML(params.data, true); break;
+            case 'addCustomSc': html = getCustomScViewHTML(params.data, !!params.data); break;
+            case 'addCustomInza': html = getInzaViewHTML(params.data, false); break;
         }
         collectionViewContainer.innerHTML = html;
-        addCollectionEventListeners(viewName);
+        addCollectionEventListeners(viewName, params.data);
     }
     
     let selectedMasterInzaId = null;
-    function addCollectionEventListeners(viewName) {
+    function addCollectionEventListeners(viewName, data) {
         const container = collectionViewContainer;
         if (viewName === 'main') {
             container.querySelector('.collection-tabs')?.addEventListener('click', e => {
@@ -719,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.querySelector('.collection-list')?.addEventListener('click', e => {
                 const action = e.target.dataset.action;
                 if(action === 'delete') handleDeleteCollectionItem(e.target);
-                else if(action === 'edit') handleEditCollectionItem(e.target);
+                else if(action === 'edit' || action === 'view') handleEditOrViewCollectionItem(e.target);
             });
         } else {
             const form = container.querySelector('form');
@@ -736,17 +749,18 @@ document.addEventListener('DOMContentLoaded', () => {
                  renderCollectionView('main', { activeTab: DB.user.userSettings.lastCollectionTab });
             });
 
-            if(viewName === 'addMasterInza') {
+            if (viewName === 'addMasterInza') {
                 const searchInput = form.querySelector('#master-inza-search');
                 const resultsContainer = form.querySelector('.inza-search-results');
                 const saveBtn = form.querySelector('.save-btn');
                 
                 searchInput.addEventListener('input', () => {
                     const term = searchInput.value.toLowerCase();
-                    if (!term) {
-                        resultsContainer.innerHTML = '';
-                        return;
-                    }
+                    resultsContainer.innerHTML = '';
+                    saveBtn.disabled = true;
+                    selectedMasterInzaId = null;
+                    if (!term) return;
+                    
                     const results = DB.master.inzaCharacters.filter(i => i.name.toLowerCase().includes(term));
                     resultsContainer.innerHTML = results.map(i => `<div class="inza-search-item" data-id="${i.masterInzaId}">${i.name}</div>`).join('');
                 });
@@ -756,13 +770,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedMasterInzaId = e.target.dataset.id;
                         searchInput.value = e.target.textContent;
                         saveBtn.disabled = false;
-                        resultsContainer.innerHTML = ''; // Clear results after selection
+                        resultsContainer.innerHTML = '';
                     }
                 });
             } else if (viewName === 'addCustomSc' || viewName === 'addCustomInza') {
+                container.querySelectorAll('textarea').forEach(textarea => {
+                    const skillIds = (data?.[textarea.id.replace('custom-sc-', '').replace('inza-skills-', '')] || []).map(id => id);
+                    formSkillState[textarea.id] = new Set(skillIds);
+                });
+
                 container.querySelectorAll('.skill-search-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        openSkillSearchModal(btn.previousElementSibling);
+                        const targetTextareaId = btn.dataset.targetTextarea;
+                        const targetTextarea = document.getElementById(targetTextareaId);
+                        
+                        openSkillSearchModal(formSkillState[targetTextareaId], (confirmedSkillIds) => {
+                            formSkillState[targetTextareaId] = confirmedSkillIds;
+                            const allSkills = [...DB.master.skills, ...(DB.user.customData.skills || [])];
+                            targetTextarea.value = [...confirmedSkillIds].map(id => allSkills.find(s => s.skillId === id)?.name).filter(Boolean).join('\n');
+                        });
                     });
                 });
             }
@@ -770,37 +796,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function handleSaveMasterSc(form) {
-        const masterCardId = form.querySelector('#master-sc-select').value;
+        const editingId = form.dataset.editingId;
         const level = parseInt(form.querySelector('#master-sc-level').value, 10);
         
-        const masterCard = DB.master.supportCards.find(c => c.masterCardId === masterCardId);
-        if(!masterCard) { alert('유효하지 않은 마스터 카드입니다.'); return; }
+        if (editingId) { // 마스터 카드 편집
+            const userCard = DB.user.myCollection.supportCards.find(c => c.userCardId === editingId);
+            if(userCard) userCard.level = level;
+        } else { // 마스터 카드 추가
+            const masterCardId = document.querySelector('#master-sc-select').value;
+            const masterCard = DB.master.supportCards.find(c => c.masterCardId === masterCardId);
+            if(!masterCard) { alert('유효하지 않은 마스터 카드입니다.'); return; }
 
-        const newCard = {
-            userCardId: `user_sc_${Date.now()}`,
-            masterCardId: masterCard.masterCardId,
-            name: masterCard.name,
-            level: level,
-        };
-        DB.user.myCollection.supportCards.push(newCard);
+            const newCard = {
+                userCardId: `user_sc_${Date.now()}`,
+                masterCardId: masterCard.masterCardId,
+                name: masterCard.name,
+                level: level,
+            };
+            DB.user.myCollection.supportCards.push(newCard);
+        }
+
         saveUserData();
         renderCollectionView('main', { activeTab: 'sc' });
     }
 
     function handleSaveMasterInza(form) {
-        if (!selectedMasterInzaId) {
-            alert('인자를 선택해주세요.');
-            return;
-        }
+        if (!selectedMasterInzaId) { alert('인자를 선택해주세요.'); return; }
         const masterInza = DB.master.inzaCharacters.find(i => i.masterInzaId === selectedMasterInzaId);
         if(!masterInza) { alert('유효하지 않은 마스터 인자입니다.'); return; }
 
-        const newUserInza = {
-            userInzaId: `user_inza_${Date.now()}`,
-            masterInzaId: masterInza.masterInzaId,
-            name: masterInza.name,
-        };
+        const newUserInza = { userInzaId: `user_inza_${Date.now()}`, masterInzaId: masterInza.masterInzaId, name: masterInza.name };
         DB.user.myCollection.inzaCharacters.push(newUserInza);
+        
         saveUserData();
         selectedMasterInzaId = null;
         renderCollectionView('main', { activeTab: 'inza' });
@@ -810,25 +837,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const trimmedName = skillName.trim();
         if (!trimmedName) return null;
 
-        const existingSkill = DB.master.skills.find(s => s.name === trimmedName) ||
+        const existingSkill = (DB.master.skills || []).find(s => s.name === trimmedName) ||
                               (DB.user.customData.skills || []).find(s => s.name === trimmedName);
         if (existingSkill) return existingSkill.skillId;
         
-        // 커스텀 스킬 생성 로직 (예: 스킬명#타입#조건)
         const parts = trimmedName.split('#');
         const name = parts[0];
         const newSkillId = `custom_s_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         const newSkill = { 
-            skillId: newSkillId, 
-            name: name, 
-            category: "common", // 기본값
-            isCustom: true,
-            // 추가 속성 파싱 (향후 확장 가능)
+            skillId: newSkillId, name: name, category: "common", isCustom: true,
             effectType: parts[1] || 'normal',
             tags: parts[2] ? [parts[2]] : [],
         };
-
-        DB.user.customData.skills.push(newSkill);
+        (DB.user.customData.skills = DB.user.customData.skills || []).push(newSkill);
         console.log(`신규 커스텀 스킬 생성: ${name} (ID: ${newSkillId})`);
         return newSkillId;
     }
@@ -839,47 +860,31 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const editingId = form.dataset.editingId;
         const hintLevel = parseInt(form.querySelector('#custom-sc-hint-level').value, 10);
-        const hintSkillsText = form.querySelector('#custom-sc-hint-skills').value;
-        const eventSkillsText = form.querySelector('#custom-sc-event-skills').value;
-
-        const hintSkillIds = hintSkillsText.split('\n').map(getOrCreateSkillId).filter(Boolean);
-        const eventSkillIds = eventSkillsText.split('\n').map(getOrCreateSkillId).filter(Boolean);
-
+        
+        const hintSkillIds = [...formSkillState['custom-sc-hint-skills']];
+        const eventSkillIds = [...formSkillState['custom-sc-event-skills']];
+        
         if(editingId) { // 편집 모드
-            const masterCard = (DB.user.customData.supportCards || []).find(c => c.masterCardId === editingId || c.userCardId === editingId);
-            const userCard = (DB.user.myCollection.supportCards || []).find(c => c.userCardId === editingId);
-            
-            if(masterCard) { // 커스텀 카드의 원본 수정
+            const masterCard = DB.user.customData.supportCards.find(c => c.masterCardId === editingId);
+            if (masterCard) {
                 masterCard.name = name;
                 masterCard.hintLevel = hintLevel;
                 masterCard.hintSkills = hintSkillIds;
                 masterCard.eventSkills = eventSkillIds;
-                // 이 카드를 사용하는 모든 myCollection 카드 이름도 업데이트
-                (DB.user.myCollection.supportCards || []).forEach(uc => {
+                
+                DB.user.myCollection.supportCards.forEach(uc => {
                     if (uc.masterCardId === masterCard.masterCardId) uc.name = name;
                 });
-            } else if (userCard) { // 마스터 카드의 돌파 레벨 등 수정
-                userCard.name = name; // 이름은 유저가 바꿀 수 있도록 허용
-                userCard.level = hintLevel; // 임시로 힌트레벨을 돌파레벨로 사용. 향후 UI 분리 필요.
             }
         } else { // 생성 모드
             const masterCardId = `custom_sc_${Date.now()}`;
             const newMasterCard = {
-                masterCardId: masterCardId,
-                name: name,
-                hintLevel: hintLevel,
-                hintSkills: hintSkillIds,
-                eventSkills: eventSkillIds,
-                isCustom: true,
+                masterCardId, name, hintLevel, hintSkills: hintSkillIds, eventSkills: eventSkillIds, isCustom: true,
             };
             DB.user.customData.supportCards.push(newMasterCard);
 
             const newUserCard = {
-                userCardId: `user_sc_${Date.now()}`,
-                masterCardId: masterCardId,
-                name: name,
-                level: 4, // 커스텀은 기본 풀돌
-                hintLevel: hintLevel
+                userCardId: `user_sc_${Date.now()}`, masterCardId, name, level: 4, hintLevel,
             };
             DB.user.myCollection.supportCards.push(newUserCard);
         }
@@ -898,7 +903,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         slots.forEach(slotId => {
             const charName = form.querySelector(`#inza-char-name-${slotId}`).value.trim();
-            const skillFactors = form.querySelector(`#inza-skills-${slotId}`).value.split('\n').map(getOrCreateSkillId).filter(Boolean);
             
             const blueType = form.querySelector(`#inza-blue-type-${slotId}`).value;
             const blueStar = form.querySelector(`#inza-blue-star-${slotId}`).value;
@@ -907,19 +911,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const greenSkillName = form.querySelector(`#inza-green-skill-${slotId}`).value;
             const greenStar = form.querySelector(`#inza-green-star-${slotId}`).value;
 
-            newSlots[slotId] = { name: charName, skillFactors: skillFactors };
+            newSlots[slotId] = {
+                name: charName,
+                skillFactors: [...(formSkillState[`inza-skills-${slotId}`] || [])]
+            };
             if (blueType && blueStar) newSlots[slotId].blue = { type: blueType, star: parseInt(blueStar) };
             if (redType && redStar) newSlots[slotId].red = { type: redType, star: parseInt(redStar) };
             if (greenSkillName && greenStar) newSlots[slotId].green = { skillId: getOrCreateSkillId(greenSkillName), star: parseInt(greenStar) };
         });
 
         if (editingId) { // 편집 모드
-             const masterInza = (DB.user.customData.inzaCharacters || []).find(i => i.masterInzaId === editingId);
+             const masterInza = DB.user.customData.inzaCharacters.find(i => i.masterInzaId === editingId);
              if (masterInza) {
                 masterInza.name = setName;
                 masterInza.slots = newSlots;
-                 // 이 인자를 사용하는 모든 myCollection 인자 이름도 업데이트
-                (DB.user.myCollection.inzaCharacters || []).forEach(ui => {
+                DB.user.myCollection.inzaCharacters.forEach(ui => {
                     if (ui.masterInzaId === masterInza.masterInzaId) ui.name = setName;
                 });
              }
@@ -941,7 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = itemEl.dataset.id;
         const type = itemEl.dataset.type;
 
-        if (confirm('정말로 이 항목을 컬렉션에서 삭제하시겠습니까? (원본 커스텀 데이터는 삭제되지 않습니다)')) {
+        if (confirm('정말로 이 항목을 컬렉션에서 삭제하시겠습니까? (커스텀 데이터 원본은 삭제되지 않습니다)')) {
             if (type === 'sc') {
                 DB.user.myCollection.supportCards = (DB.user.myCollection.supportCards || []).filter(c => c.userCardId !== id);
             } else if (type === 'inza') {
@@ -952,7 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleEditCollectionItem(btn) {
+    function handleEditOrViewCollectionItem(btn) {
         const itemEl = btn.closest('.collection-item');
         const id = itemEl.dataset.id;
         const type = itemEl.dataset.type;
@@ -960,34 +966,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'sc') {
             const userCard = DB.user.myCollection.supportCards.find(c => c.userCardId === id);
             if (!userCard) return;
-            const masterCard = (DB.master.supportCards.find(c => c.masterCardId === userCard.masterCardId) ||
-                              DB.user.customData.supportCards.find(c => c.masterCardId === userCard.masterCardId));
+            const masterCard = ((DB.master.supportCards || []).find(c => c.masterCardId === userCard.masterCardId) ||
+                              (DB.user.customData.supportCards || []).find(c => c.masterCardId === userCard.masterCardId));
             
             if (masterCard.isCustom) {
                 renderCollectionView('addCustomSc', { data: masterCard });
             } else {
-                // 마스터 카드 편집은 현재 돌파레벨만 가능하게 임시 구현
-                const newLevel = prompt(`현재 돌파 레벨: ${userCard.level}\n새로운 돌파 레벨을 입력하세요 (0-4):`, userCard.level);
-                if (newLevel !== null && !isNaN(newLevel) && newLevel >= 0 && newLevel <= 4) {
-                    userCard.level = parseInt(newLevel, 10);
-                    saveUserData();
-                    renderCollectionView('main', { activeTab: 'sc'});
-                }
+                renderCollectionView('addMasterSc', { data: userCard });
             }
         } else if (type === 'inza') {
             const userInza = DB.user.myCollection.inzaCharacters.find(i => i.userInzaId === id);
             if (!userInza) return;
-            const masterInza = (DB.master.inzaCharacters.find(i => i.masterInzaId === userInza.masterInzaId) ||
-                              DB.user.customData.inzaCharacters.find(i => i.masterInzaId === userInza.masterInzaId));
+            const masterInza = ((DB.master.inzaCharacters || []).find(i => i.masterInzaId === userInza.masterInzaId) ||
+                              (DB.user.customData.inzaCharacters || []).find(i => i.masterInzaId === userInza.masterInzaId));
             
             if (masterInza.isCustom) {
                  renderCollectionView('addCustomInza', { data: masterInza });
             } else {
-                alert('마스터 인자는 편집할 수 없습니다. 내용을 바꾸려면 직접 생성해주세요.');
+                 renderCollectionView('viewMasterInza', { data: masterInza });
             }
         }
     }
-
 
     // --- 이벤트 핸들러 ---
     function handleDeckChange() {
@@ -1010,9 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const skillItem = targetElement.closest('.skill-item');
             if (skillItem) {
                 targetElement = skillItem.querySelector('.skill-checkbox');
-            } else {
-                return;
-            }
+            } else { return; }
         }
 
         if (targetElement && targetElement.classList.contains('skill-checkbox')) {
@@ -1046,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = (e) => {
             try {
                 const jsonData = JSON.parse(e.target.result);
-                if (jsonData.myCollection && jsonData.userSettings && jsonData.version) {
+                if (jsonData.myCollection && jsonData.userSettings) {
                     applyUserData(jsonData);
                     saveUserData();
                     renderAll();
@@ -1075,7 +1072,67 @@ document.addEventListener('DOMContentLoaded', () => {
         themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
     }
 
+    function renderTargetModal() {
+        const allSkillsListEl = targetModal.querySelector('#modal-all-skills .skill-list');
+        const requiredListEl = targetModal.querySelector('#modal-required-skills .skill-list');
+        const ignoredListEl = targetModal.querySelector('#modal-ignored-skills .skill-list');
+        const searchInput = targetModal.querySelector('#modal-search');
 
+        const { required = [], ignored = [] } = DB.user.targetSkills;
+        const allSkills = [...DB.master.skills, ...(DB.user.customData.skills || [])]
+            .sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+
+        function renderLists(searchTerm = '') {
+            const term = searchTerm.toLowerCase();
+            
+            const filteredAll = allSkills.filter(s => 
+                !required.includes(s.skillId) && 
+                !ignored.includes(s.skillId) &&
+                s.name.toLowerCase().includes(term)
+            );
+
+            allSkillsListEl.innerHTML = filteredAll.map(s => `
+                <div class="modal-skill-item" data-id="${s.skillId}">
+                    <span>${s.name}</span>
+                    <div class="actions">
+                        <button data-action="add-required" title="필수 스킬로 추가">🔥</button>
+                        <button data-action="add-ignored" title="무시할 스킬로 추가">🗑️</button>
+                    </div>
+                </div>`).join('');
+            
+            requiredListEl.innerHTML = required.map(id => {
+                const s = getSkillData(id);
+                return s ? `<div class="modal-skill-item" data-id="${id}"><span>${s.name}</span><div class="actions"><button data-action="remove-required">❌</button></div></div>` : '';
+            }).join('');
+
+            ignoredListEl.innerHTML = ignored.map(id => {
+                const s = getSkillData(id);
+                return s ? `<div class="modal-skill-item" data-id="${id}"><span>${s.name}</span><div class="actions"><button data-action="remove-ignored">❌</button></div></div>` : '';
+            }).join('');
+        }
+
+        targetModal.addEventListener('click', e => {
+            const action = e.target.dataset.action;
+            if (!action) return;
+
+            const id = e.target.closest('.modal-skill-item').dataset.id;
+            const { required = [], ignored = [] } = DB.user.targetSkills;
+
+            if (action === 'add-required') {
+                DB.user.targetSkills.required = [...new Set([...required, id])];
+            } else if (action === 'add-ignored') {
+                DB.user.targetSkills.ignored = [...new Set([...ignored, id])];
+            } else if (action === 'remove-required') {
+                DB.user.targetSkills.required = required.filter(skillId => skillId !== id);
+            } else if (action === 'remove-ignored') {
+                DB.user.targetSkills.ignored = ignored.filter(skillId => skillId !== id);
+            }
+            renderLists(searchInput.value);
+        });
+        
+        searchInput.addEventListener('input', () => renderLists(searchInput.value));
+        renderLists();
+    }
 
     // --- 초기화 및 이벤트 리스너 설정 ---
     async function initialize() {
@@ -1098,7 +1155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hideAcquiredToggle.addEventListener('change', e => { DB.user.userSettings.hideAcquired = e.target.checked; renderAll(); saveUserData(); });
         showDetailsToggle.addEventListener('change', e => { DB.user.userSettings.showDetails = e.target.checked; skillListContainer.classList.toggle('details-visible', e.target.checked); saveUserData(); });
         clickAreaToggle.addEventListener('change', e => { DB.user.userSettings.clickArea = e.target.checked ? 'full' : 'checkbox'; renderAll(); saveUserData(); });
-        downloadBtn.addEventListener('click', () => { const dataStr = JSON.stringify(DB.user, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'uma-skill-userdata.json'; a.click(); URL.revokeObjectURL(url); });
+        downloadBtn.addEventListener('click', () => { const dataStr = JSON.stringify(DB.user, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); a = document.createElement('a'); a.href = url; a.download = 'uma-skill-userdata.json'; a.click(); URL.revokeObjectURL(url); });
         uploadBtn.addEventListener('click', () => uploadInput.click());
         uploadInput.addEventListener('change', handleUploadChange);
         resetDataBtn.addEventListener('click', handleResetDataClick);
@@ -1111,13 +1168,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         collectionModal.querySelector('.modal-close-btn').addEventListener('click', () => {
             collectionModal.style.display = 'none';
-            renderAll(); // 모달 닫을 때 메인 화면 갱신
+            renderAll();
         });
         
-        // Target Modal (기존과 유사하게 설정)
-        openTargetModalBtn.addEventListener('click', () => targetModal.style.display = 'flex');
+        openTargetModalBtn.addEventListener('click', () => {
+            renderTargetModal();
+            targetModal.style.display = 'flex';
+        });
         targetModal.querySelector('.modal-close-btn').addEventListener('click', () => targetModal.style.display = 'none');
-        // (Target Modal 내부 로직은 아직 구현되지 않음)
+        targetModal.querySelector('#modal-save-btn').addEventListener('click', () => {
+            targetModal.style.display = 'none';
+            saveUserData();
+            renderAll();
+        });
 
         // 스킬 검색 모달 이벤트 리스너
         const skillSearchAllSkillsList = skillSearchModal.querySelector('#skill-search-all-skills .skill-list');
@@ -1127,16 +1190,13 @@ document.addEventListener('DOMContentLoaded', () => {
         skillSearchSelectedSkillsList.addEventListener('click', handleSkillSearchModalClick);
         document.getElementById('skill-search-input').addEventListener('input', e => renderSkillSearchModal(e.target.value));
         document.getElementById('skill-search-confirm-btn').addEventListener('click', () => {
-            if (currentSkillTextarea) {
-                const allSkills = [...DB.master.skills, ...(DB.user.customData.skills || [])];
-                const selectedNames = [...skillSearchSelectedIds].map(id => allSkills.find(s => s.skillId === id)?.name).filter(Boolean);
-                currentSkillTextarea.value = selectedNames.join('\n');
+            if (onSkillSearchConfirm) {
+                onSkillSearchConfirm(new Set(currentEditingSkillIds));
             }
             skillSearchModal.style.display = 'none';
         });
         skillSearchModal.querySelector('.modal-close-btn').addEventListener('click', () => skillSearchModal.style.display = 'none');
         document.getElementById('skill-search-cancel-btn').addEventListener('click', () => skillSearchModal.style.display = 'none');
-
     }
 
     initialize();
