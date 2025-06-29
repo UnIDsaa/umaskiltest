@@ -388,66 +388,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- 핵심 로직 (획득 가능 스킬 계산) ---
-    function getObtainableSkills() {
-        const skills = {};
-        const ignoredSkills = DB.user.targetSkills?.ignored || [];
-        
-        const addSkill = (skillId, sourceName, type, level = null) => {
-            if (!skillId) return;
-            const skillData = getSkillData(skillId);
-            if (!skillData) {
-                console.warn(`존재하지 않는 스킬 ID: ${skillId}`);
-                return;
-            }
+    
+	function getObtainableSkills() {
+		const skills = {};
+		const ignoredSkills = DB.user.targetSkills?.ignored || [];
+		
+		const addSkill = (skillId, sourceName, type, level = null) => {
+			if (!skillId) return;
+			const skillData = getSkillData(skillId);
+			if (!skillData) {
+				console.warn(`존재하지 않는 스킬 ID: ${skillId}`);
+				return;
+			}
 
-            if (!skills[skillId]) {
-                skills[skillId] = { skillId, name: skillData.name, sources: [] };
-            }
-            skills[skillId].sources.push({ name: sourceName, type, level });
-        };
-        
-        currentDeck.inza.forEach(userInzaId => {
-            if (!userInzaId) return;
-            const userInza = (DB.user.myCollection.inzaCharacters || []).find(i => i.userInzaId === userInzaId);
-            if (!userInza) return;
-            
-            const masterInza = findMasterInza(userInza.masterInzaId);
-            if (!masterInza) return;
+			if (!skills[skillId]) {
+				skills[skillId] = { skillId, name: skillData.name, sources: [] };
+			}
+			skills[skillId].sources.push({ name: sourceName, type, level });
+		};
+		
+		currentDeck.inza.forEach(userInzaId => {
+			if (!userInzaId) return;
+			const userInza = (DB.user.myCollection.inzaCharacters || []).find(i => i.userInzaId === userInzaId);
+			if (!userInza) return;
+			
+			const masterInza = findMasterInza(userInza.masterInzaId);
+			if (!masterInza) return;
 
-            Object.values(masterInza.slots || {}).forEach(slot => {
-                if (slot.uniqueSkillId) addSkill(slot.uniqueSkillId, slot.name, '고유');
-                if (slot.green && slot.green.skillId) { // ID가 있는 녹인자만 계산
-                    addSkill(slot.green.skillId, slot.name, '인자');
-                }
-                (slot.skillFactors || []).forEach(skillId => addSkill(skillId, slot.name, '인자'));
-            });
-        });
-        
-        [...new Set(currentDeck.supportCards.filter(sc => sc))].forEach(userCardId => {
-            const userCard = (DB.user.myCollection.supportCards || []).find(c => c.userCardId === userCardId);
-            if (!userCard) return;
+			Object.values(masterInza.slots || {}).forEach(slot => {
+				if (slot.uniqueSkillId) addSkill(slot.uniqueSkillId, slot.name, '고유');
+				
+				// 녹인자 처리 로직 수정
+				if (slot.green && slot.green.skillId) {
+					// 1. ID가 있는 경우: 기존 로직대로 처리 (마스터 데이터, 혹은 정상 저장된 커스텀 데이터)
+					addSkill(slot.green.skillId, slot.name, '인자');
+				} else if (slot.green && !slot.green.skillId && slot.green.name) {
+					// 2. ID는 없지만 이름이 있는 경우 (커스텀 스킬일 가능성)
+					//    이름으로 스킬을 찾고, 해당 스킬이 '고유 스킬'일 경우에만 목록에 추가
+					const potentialSkill = findSkillByName(slot.green.name);
+					if (potentialSkill && potentialSkill.isUnique) {
+						addSkill(potentialSkill.skillId, slot.name, '고유(인자)');
+					}
+				}
 
-            const masterCard = findMasterSc(userCard.masterCardId);
-            if (!masterCard) return;
-            
-            const levelInfo = getCardLevelInfo(userCard);
+				(slot.skillFactors || []).forEach(skillId => addSkill(skillId, slot.name, '인자'));
+			});
+		});
+		
+		[...new Set(currentDeck.supportCards.filter(sc => sc))].forEach(userCardId => {
+			const userCard = (DB.user.myCollection.supportCards || []).find(c => c.userCardId === userCardId);
+			if (!userCard) return;
 
-            (masterCard.goldenSkills || []).forEach(gs => (gs.choices || []).forEach(skillId => addSkill(skillId, masterCard.name, '금색')));
-            (masterCard.hintSkills || []).forEach(skillId => addSkill(skillId, masterCard.name, '힌트', levelInfo.hintLevel));
-            (masterCard.eventSkills || []).forEach(skillId => addSkill(skillId, masterCard.name, '이벤트'));
-        });
+			const masterCard = findMasterSc(userCard.masterCardId);
+			if (!masterCard) return;
+			
+			const levelInfo = getCardLevelInfo(userCard);
 
-        if(currentDeck.scenario) {
-            const scenarioData = (DB.master.scenarios || []).find(s => s.scenarioId === currentDeck.scenario);
-            if(scenarioData) {
-                (scenarioData.goldenSkills || []).forEach(gs => (gs.choices || []).forEach(skillId => addSkill(skillId, scenarioData.name, '금색-시나리오')));
-                (scenarioData.skills || []).forEach(s => addSkill(s.skillId, scenarioData.name, '시나리오', s.level));
-            }
-        }
-        
-        ignoredSkills.forEach(id => delete skills[id]);
-        return skills;
-    }
+			(masterCard.goldenSkills || []).forEach(gs => (gs.choices || []).forEach(skillId => addSkill(skillId, masterCard.name, '금색')));
+			(masterCard.hintSkills || []).forEach(skillId => addSkill(skillId, masterCard.name, '힌트', levelInfo.hintLevel));
+			(masterCard.eventSkills || []).forEach(skillId => addSkill(skillId, masterCard.name, '이벤트'));
+		});
+
+		if(currentDeck.scenario) {
+			const scenarioData = (DB.master.scenarios || []).find(s => s.scenarioId === currentDeck.scenario);
+			if(scenarioData) {
+				(scenarioData.goldenSkills || []).forEach(gs => (gs.choices || []).forEach(skillId => addSkill(skillId, scenarioData.name, '금색-시나리오')));
+				(scenarioData.skills || []).forEach(s => addSkill(s.skillId, scenarioData.name, '시나리오', s.level));
+			}
+		}
+		
+		ignoredSkills.forEach(id => delete skills[id]);
+		return skills;
+	}
 
     // --- 컬렉션 모달 뷰 템플릿 ---
     function getCollectionMainViewHTML(activeTab) {
@@ -682,68 +694,66 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function getCustomSkillFormHTML(skillData = null) {
-        const isEdit = !!skillData;
-        const effectTypes = { normal: '일반', passive: '패시브/능력치 (녹색)', heal: '회복 (파랑)', debuff: '디버프/방해 (빨강)' };
-        const categories = { common: '공용 (특정 조건 없음)', distance: '거리 (단/마/중/장거리)', style: '각질 (도주/선행 등)' };
+	function getCustomSkillFormHTML(skillData = null) {
+		const isEdit = !!skillData;
+		const effectTypes = { normal: '일반', passive: '패시브/능력치 (녹색)', heal: '회복 (파랑)', debuff: '디버프/방해 (빨강)' };
+		const categories = { common: '공용 (특정 조건 없음)', distance: '거리 (단/마/중/장거리)', style: '각질 (도주/선행 등)' };
+		const upgradeTypes = { normal: '일반 스킬', gold: '상위 스킬 (금색)', evolved: '진화 스킬 (핑크)' };
 
-        return `
-            <form class="collection-form-view" data-editing-id="${isEdit ? skillData.skillId : ''}">
-                <h3>${isEdit ? '커스텀 스킬 편집' : '새 커스텀 스킬 생성'}</h3>
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label for="custom-skill-name">스킬 이름</label>
-                        <input type="text" id="custom-skill-name" required value="${skillData?.name || ''}">
-                    </div>
+		return `
+			<form class="collection-form-view" data-editing-id="${isEdit ? skillData.skillId : ''}">
+				<h3>${isEdit ? '커스텀 스킬 편집' : '새 커스텀 스킬 생성'}</h3>
+				
+				<div class="form-field">
+					<label for="custom-skill-name">스킬 이름</label>
+					<input type="text" id="custom-skill-name" required value="${skillData?.name || ''}">
+				</div>
+				<div class="form-field">
+					<label><input type="checkbox" id="custom-skill-isUnique" ${skillData?.isUnique ? 'checked' : ''}> 캐릭터 고유 스킬</label>
+				</div>
 
-                    <div class="form-field">
-                        <label><input type="checkbox" id="custom-skill-isUnique" ${skillData?.isUnique ? 'checked' : ''}> 캐릭터 고유 스킬입니다.</label>
-                    </div>
-                </div>
+				<div class="form-grid form-grid-cols-2">
+					<div class="form-field">
+						<label for="custom-skill-upgradeType">스킬 등급</label>
+						<select id="custom-skill-upgradeType">
+							${Object.entries(upgradeTypes).map(([key, value]) => `<option value="${key}" ${skillData?.upgradeType === key ? 'selected' : ''}>${value}</option>`).join('')}
+						</select>
+					</div>
 
-                <h4>등급 및 조건</h4>
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label>스킬 등급</label>
-                        <label><input type="radio" name="upgradeType" value="normal" ${!skillData?.upgradeType || skillData.upgradeType === 'normal' ? 'checked' : ''}> 일반 스킬 (기본)</label>
-                        <label><input type="radio" name="upgradeType" value="gold" ${skillData?.upgradeType === 'gold' ? 'checked' : ''}> 상위 스킬 (금색)</label>
-                        <label><input type="radio" name="upgradeType" value="evolved" ${skillData?.upgradeType === 'evolved' ? 'checked' : ''}> 진화 스킬 (핑크)</label>
-                    </div>
-                    <div class="form-field conditional-field" style="display: ${skillData?.upgradeType === 'evolved' ? 'flex' : 'none'};">
-                        <label for="custom-skill-condition">진화 조건</label>
-                        <textarea id="custom-skill-condition" rows="2" placeholder="예: G1 4회 이상 승리 및 스피드 1200 이상 달성 시">${skillData?.evolutionCondition || ''}</textarea>
-                    </div>
-                </div>
+					<div class="form-field">
+						<label for="custom-skill-effectType">아이콘 색상 (효과)</label>
+						<select id="custom-skill-effectType">
+							${Object.entries(effectTypes).map(([key, value]) => `<option value="${key}" ${skillData?.effectType === key ? 'selected' : ''}>${value}</option>`).join('')}
+						</select>
+					</div>
+					
+					<div class="form-field">
+						<label for="custom-skill-category">목록에 표시할 그룹</label>
+						<select id="custom-skill-category">
+							 ${Object.entries(categories).map(([key, value]) => `<option value="${key}" ${skillData?.category === key ? 'selected' : ''}>${value}</option>`).join('')}
+						</select>
+						<small>💡 스킬 목록을 정리할 폴더를 선택합니다.</small>
+					</div>
+					
+					<div class="form-field">
+						<label for="custom-skill-tags">스킬 정보 태그 (쉼표로 구분)</label>
+						<input type="text" id="custom-skill-tags" placeholder="예: 중거리, 선행, 최종 코너" value="${(skillData?.tags || []).join(', ')}">
+						<small>💡 스킬의 모든 조건, 특징을 입력합니다.</small>
+					</div>
+				</div>
 
-                <h4>시각적 표현 및 분류</h4>
-                <div class="form-grid form-grid-cols-2">
-                    <div class="form-field">
-                        <label for="custom-skill-effectType">아이콘 색상 (효과)</label>
-                        <select id="custom-skill-effectType">
-                            ${Object.entries(effectTypes).map(([key, value]) => `<option value="${key}" ${skillData?.effectType === key ? 'selected' : ''}>${value}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="form-field">
-                        <label for="custom-skill-category">목록에 표시할 그룹</label>
-                        <select id="custom-skill-category">
-                             ${Object.entries(categories).map(([key, value]) => `<option value="${key}" ${skillData?.category === key ? 'selected' : ''}>${value}</option>`).join('')}
-                        </select>
-                        <small>💡 이 스킬을 목록의 어느 '폴더'에 넣어 정리할지 선택합니다. '선행/중거리' 스킬이라도 본인이 보기 편한 곳에 자유롭게 지정할 수 있습니다.</small>
-                    </div>
-                    <div class="form-field" style="grid-column: 1 / -1;">
-                        <label for="custom-skill-tags">스킬 정보 태그 (쉼표로 구분)</label>
-                        <input type="text" id="custom-skill-tags" placeholder="예: 중거리, 선행, 앞쪽각질, 도쿄 경기장" value="${(skillData?.tags || []).join(', ')}">
-                        <small>💡 이 스킬의 모든 조건과 특징을 쉼표(,)로 자유롭게 입력하세요. 이 태그들은 스킬 이름 옆에 표시되어 상세 정보를 알려줍니다.</small>
-                    </div>
-                </div>
+				<div class="form-field conditional-field" style="display: ${skillData?.upgradeType === 'evolved' ? 'flex' : 'none'};">
+					<label for="custom-skill-condition">진화 조건</label>
+					<textarea id="custom-skill-condition" rows="2" placeholder="예: G1 4회 이상 승리 및 스피드 1200 이상 달성 시">${skillData?.evolutionCondition || ''}</textarea>
+				</div>
 
-                <div class="form-actions">
-                    <button type="button" class="cancel-btn">취소</button>
-                    <button type="submit" class="save-btn">저장</button>
-                </div>
-            </form>
-        `;
-    }
+				<div class="form-actions">
+					<button type="button" class="cancel-btn">취소</button>
+					<button type="submit" class="save-btn">저장</button>
+				</div>
+			</form>
+		`;
+	}
 
     // --- 스킬 검색 모달 로직 ---
     let currentSkillTextarea = null;
