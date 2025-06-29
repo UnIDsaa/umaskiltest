@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createDefaultUserData() {
         return {
-            version: "1.7.1",
+            version: "1.7.2",
             userSettings: { theme: 'light', hideAcquired: false, showDetails: false, clickArea: 'checkbox', lastCollectionTab: 'sc' },
             customData: { skills: [], supportCards: [], inzaCharacters: [] },
             myCollection: { supportCards: [], inzaCharacters: [] },
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMasterData() {
         try {
-            const response = await fetch('masterData.json?v=1.7.1');
+            const response = await fetch('masterData.json?v=1.7.2');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return await response.json();
         } catch (error) {
@@ -186,25 +186,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-	function findMasterSc(masterCardId) {
-		// 1. 커스텀 데이터에서 먼저 찾기
-		const customSc = (DB.user.customData.supportCards || []).find(c => c.masterCardId === masterCardId);
-		if (customSc) return customSc;
-
-		// 2. 커스텀 데이터에 없으면 마스터 데이터에서 찾기
-		const masterSc = (DB.master.supportCards || []).find(c => c.masterCardId === masterCardId);
-		return masterSc;
-	}
-	
-	function findMasterInza(masterInzaId) {
-		// 1. 커스텀 데이터에서 먼저 찾기
-		const customInza = (DB.user.customData.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId);
-		if (customInza) return customInza;
-
-		// 2. 커스텀 데이터에 없으면 마스터 데이터에서 찾기
-		const masterInza = (DB.master.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId);
-		return masterInza;
-	}
+    function findMasterSc(masterCardId) {
+        const customSc = (DB.user.customData.supportCards || []).find(c => c.masterCardId === masterCardId);
+        if (customSc) return customSc;
+        return (DB.master.supportCards || []).find(c => c.masterCardId === masterCardId);
+    }
+    
+    function findMasterInza(masterInzaId) {
+        const customInza = (DB.user.customData.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId);
+        if (customInza) return customInza;
+        return (DB.master.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId);
+    }
 
     function getCardLevelInfo(userCard) {
         if (!userCard) return { text: '', hintLevel: 0 };
@@ -461,7 +453,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!userInza) return;
 			
 			const masterInza = findMasterInza(userInza.masterInzaId);
-			if (!masterInza) return;
+			if (!masterInza) {
+                console.warn(`Master Inza not found for ID: ${userInza.masterInzaId}`);
+                return;
+            };
 
 			Object.values(masterInza.slots || {}).forEach(slot => {
 				if (slot.uniqueSkillId) addSkill(slot.uniqueSkillId, slot.name, '고유');
@@ -506,101 +501,101 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
     // --- 컬렉션 모달 뷰 템플릿 ---
-	function getCollectionMainViewHTML(activeTab) {
-		DB.user.userSettings.lastCollectionTab = activeTab;
-		const mainContentEl = document.querySelector('#collection-modal .modal-content');
-		if (mainContentEl) mainContentEl.classList.toggle('selection-mode', isSelectionMode);
+    function getCollectionMainViewHTML(activeTab) {
+        DB.user.userSettings.lastCollectionTab = activeTab;
+        const mainContentEl = document.querySelector('#collection-modal .modal-content');
+        if (mainContentEl) mainContentEl.classList.toggle('selection-mode', isSelectionMode);
 
-		const createItemHTML = (item, typeKey) => {
-			let details = { name: '', subtext: '', id: '', type: typeKey, isCustom: false };
+        const createItemHTML = (item, typeKey) => {
+            let details = { name: '', subtext: '', id: '', type: typeKey, isCustom: false };
+    
+            if (typeKey === 'sc') { // Support Card
+                details.id = item.userCardId;
+                const masterCard = findMasterSc(item.masterCardId);
+                details.isCustom = !!masterCard?.isCustom;
+                const levelInfo = getCardLevelInfo(item);
+                details.name = item.name;
+                details.subtext = levelInfo.text;
+            } else if (typeKey === 'inza') { // Inza
+                details.id = item.userInzaId;
+                const masterInza = findMasterInza(item.masterInzaId);
+                details.isCustom = !!masterInza?.isCustom;
+                details.name = item.name;
+            } else if (typeKey === 'customSkill') { // Custom Skill
+                details.id = item.skillId;
+                details.isCustom = true;
+                details.name = item.name;
+                details.subtext = `타입: ${item.effectType || '일반'}, 카테고리: ${item.category || '공용'}`;
+            }
+            
+            const prefix = details.isCustom ? '✏️ ' : '';
+            const exportButton = details.isCustom ? `<button class="export-btn" data-action="export" title="개별 내보내기">📤</button>` : '';
+            
+            const isMasterInza = typeKey === 'inza' && !details.isCustom;
+            const actionButton = isMasterInza
+                ? `<button class="view-btn" data-action="view">보기</button>`
+                : `<button class="edit-btn" data-action="edit">편집</button>`;
 
-			if (typeKey === 'sc') { // Support Card
-				details.id = item.userCardId;
-				const masterCard = findMasterSc(item.masterCardId);
-				details.isCustom = !!masterCard?.isCustom;
-				const levelInfo = getCardLevelInfo(item);
-				details.name = item.name;
-				details.subtext = levelInfo.text;
-			} else if (typeKey === 'inza') { // Inza
-				details.id = item.userInzaId;
-				const masterInza = findMasterInza(item.masterInzaId);
-				details.isCustom = !!masterInza?.isCustom;
-				details.name = item.name;
-			} else if (typeKey === 'customSkill') { // Custom Skill
-				details.id = item.skillId;
-				details.isCustom = true;
-				details.name = item.name;
-				details.subtext = `타입: ${item.effectType || '일반'}, 카테고리: ${item.category || '공용'}`;
-			}
-			
-			const prefix = details.isCustom ? '✏️ ' : '';
-			const exportButton = details.isCustom ? `<button class="export-btn" data-action="export" title="개별 내보내기">📤</button>` : '';
-			
-			const isMasterInza = typeKey === 'inza' && !details.isCustom;
-			const actionButton = isMasterInza
-				? `<button class="view-btn" data-action="view">보기</button>`
-				: `<button class="edit-btn" data-action="edit">편집</button>`;
-
-			const isChecked = selectedForExport[details.type]?.has(details.id);
-			const checkbox = details.isCustom ? `<input type="checkbox" name="selection-${details.id}" class="selection-checkbox" data-id="${details.id}" data-type="${details.type}" ${isChecked ? 'checked' : ''}>` : '<div class="selection-checkbox-placeholder"></div>';
+            const isChecked = selectedForExport[details.type]?.has(details.id);
+            const checkbox = details.isCustom ? `<input type="checkbox" name="selection-${details.id}" class="selection-checkbox" data-id="${details.id}" data-type="${details.type}" ${isChecked ? 'checked' : ''}>` : '<div class="selection-checkbox-placeholder"></div>';
 
 
-			return `
-			<div class="collection-item" data-id="${details.id}" data-type="${details.type}">
-				<div class="collection-item-info">
-					${checkbox}
-					<div>
-						<span class="name">${prefix}${details.name}</span>
-						${details.subtext ? `<div class="details">${details.subtext}</div>` : ''}
-					</div>
-				</div>
-				<div class="collection-item-actions">
-					${exportButton}
-					${actionButton}
-					<button class="delete-btn" data-action="delete">삭제</button>
-				</div>
-			</div>`;
-		};
+            return `
+            <div class="collection-item" data-id="${details.id}" data-type="${details.type}">
+                <div class="collection-item-info">
+                    ${checkbox}
+                    <div>
+                        <span class="name">${prefix}${details.name}</span>
+                        ${details.subtext ? `<div class="details">${details.subtext}</div>` : ''}
+                    </div>
+                </div>
+                <div class="collection-item-actions">
+                    ${exportButton}
+                    ${actionButton}
+                    <button class="delete-btn" data-action="delete">삭제</button>
+                </div>
+            </div>`;
+        };
 
-		const listMap = {
-			sc: (DB.user.myCollection.supportCards || []),
-			inza: (DB.user.myCollection.inzaCharacters || []),
-			customSkill: (DB.user.customData.skills || [])
-		};
-		const listContent = (listMap[activeTab] || []).map(item => createItemHTML(item, activeTab)).join('') || `<p>보유한 ${activeTab === 'sc' ? '서포트 카드' : (activeTab === 'inza' ? '인자' : '커스텀 스킬')}가 없습니다.</p>`;
+        const listMap = {
+            sc: (DB.user.myCollection.supportCards || []),
+            inza: (DB.user.myCollection.inzaCharacters || []),
+            customSkill: (DB.user.customData.skills || [])
+        };
+        const listContent = (listMap[activeTab] || []).map(item => createItemHTML(item, activeTab)).join('') || `<p>보유한 ${activeTab === 'sc' ? '서포트 카드' : (activeTab === 'inza' ? '인자' : '커스텀 스킬')}가 없습니다.</p>`;
 
-		const totalSelected = selectedForExport.sc.size + selectedForExport.inza.size + selectedForExport.customSkill.size;
-		
-		const addMasterButton = activeTab !== 'customSkill' ? `<button class="action-btn" data-action="addMaster">✚ 기존 ${activeTab === 'sc' ? '카드' : '인자'}에서 추가</button>` : '';
-		const addCustomButtonText = activeTab === 'customSkill' ? '✚ 새 커스텀 스킬 생성' : `✚ 직접 생성`;
+        const totalSelected = selectedForExport.sc.size + selectedForExport.inza.size + selectedForExport.customSkill.size;
+        
+        const addMasterButton = activeTab !== 'customSkill' ? `<button class="action-btn" data-action="addMaster">✚ 기존 ${activeTab === 'sc' ? '카드' : '인자'}에서 추가</button>` : '';
+        const addCustomButtonText = activeTab === 'customSkill' ? '✚ 새 커스텀 스킬 생성' : `✚ 직접 생성`;
 
-		return `
-			<div class="modal-header-actions">
-				<h2>내 컬렉션 관리</h2>
-				<div class="header-buttons">
-					<button id="import-data-btn">📥 데이터 가져오기</button>
-					<button id="start-selection-btn">📋 선택하여 내보내기</button>
-				</div>
-			</div>
-			<div class="collection-header">
-				<div class="collection-tabs">
-					<button class="tab-btn ${activeTab === 'sc' ? 'active' : ''}" data-tab="sc">서포트 카드</button>
-					<button class="tab-btn ${activeTab === 'inza' ? 'active' : ''}" data-tab="inza">인자</button>
-					<button class="tab-btn ${activeTab === 'customSkill' ? 'active' : ''}" data-tab="customSkill">커스텀 스킬</button>
-				</div>
-			</div>
-			<div class="selection-mode-controls">
-				<button class="action-btn" data-action="export-selected" ${totalSelected === 0 ? 'disabled' : ''} style="background-color: var(--success-color); color: white;">✅ 선택된 항목 내보내기 (${totalSelected}개)</button>
-				<button class="action-btn" data-action="cancel-selection" style="background-color: var(--gray-dark); color: white;">❌ 취소</button>
-			</div>
-			<div class="collection-main">
-				<div class="collection-actions">
-					${addMasterButton}
-					<button class="action-btn" data-action="addCustom">${addCustomButtonText}</button>
-				</div>
-				<div class="collection-list">${listContent}</div>
-			</div>`;
-	}
+        return `
+            <div class="modal-header-actions">
+                <h2>내 컬렉션 관리</h2>
+                <div class="header-buttons">
+                    <button id="import-data-btn">📥 데이터 가져오기</button>
+                    <button id="start-selection-btn">📋 선택하여 내보내기</button>
+                </div>
+            </div>
+            <div class="collection-header">
+                <div class="collection-tabs">
+                    <button class="tab-btn ${activeTab === 'sc' ? 'active' : ''}" data-tab="sc">서포트 카드</button>
+                    <button class="tab-btn ${activeTab === 'inza' ? 'active' : ''}" data-tab="inza">인자</button>
+                    <button class="tab-btn ${activeTab === 'customSkill' ? 'active' : ''}" data-tab="customSkill">커스텀 스킬</button>
+                </div>
+            </div>
+            <div class="selection-mode-controls">
+                <button class="action-btn" data-action="export-selected" ${totalSelected === 0 ? 'disabled' : ''} style="background-color: var(--success-color); color: white;">✅ 선택된 항목 내보내기 (${totalSelected}개)</button>
+                <button class="action-btn" data-action="cancel-selection" style="background-color: var(--gray-dark); color: white;">❌ 취소</button>
+            </div>
+            <div class="collection-main">
+                <div class="collection-actions">
+                    ${addMasterButton}
+                    <button class="action-btn" data-action="addCustom">${addCustomButtonText}</button>
+                </div>
+                <div class="collection-list">${listContent}</div>
+            </div>`;
+    }
 
     function getEditMasterScViewHTML(cardData) {
         const levelOptions = [
@@ -968,7 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const totalSelected = selectedForExport.sc.size + selectedForExport.inza.size + selectedForExport.customSkill.size;
                     const exportBtn = container.querySelector('.selection-mode-controls button[data-action="export-selected"]');
                     if(exportBtn) {
-                        exportBtn.textContent = `✅ 선택 완료 (${totalSelected}개)`;
+                        exportBtn.textContent = `✅ 선택된 항목 내보내기 (${totalSelected}개)`;
                         exportBtn.disabled = totalSelected === 0;
                     }
                     return;
@@ -1536,7 +1531,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const exportObject = {
             dataType: 'UmaSkillChecker_IndividualExport',
-            version: '1.7.1',
+            version: '1.7.2',
             data: { type: dataType, item: dataToExport },
             dependencies: { skills: dependencySkills }
         };
@@ -1549,7 +1544,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = { skills: [], supportCards: [], inzaCharacters: [] };
         const dependencySkillIds = new Set();
     
-        // 1. Add explicitly selected items to data and gather their dependencies
         selectedForExport.customSkill.forEach(id => {
             const skill = DB.user.customData.skills.find(s => s.skillId === id);
             if (skill) data.skills.push(skill);
@@ -1571,7 +1565,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     
-        // 2. Add dependency skills that weren't explicitly selected
         const existingSkillIds = new Set(data.skills.map(s => s.skillId));
         const dependencySkills = [];
         dependencySkillIds.forEach(depId => {
@@ -1583,7 +1576,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const exportObject = {
             dataType: 'UmaSkillChecker_BulkExport',
-            version: '1.7.1',
+            version: '1.7.2',
             data: data,
             dependencies: { skills: dependencySkills }
         };
@@ -1647,54 +1640,54 @@ document.addEventListener('DOMContentLoaded', () => {
         return '';
     }
 
-    function resolveConflict(existingItem, newItem, type) {
+    function resolveConflict(existingItem, newItem, typeLabel) {
         return new Promise((resolve) => {
+            const mainHeaderEl = conflictModal.querySelector('.conflict-header h3');
+            const existingHeaderEl = conflictModal.querySelector('#existing-data-column h4');
+            const newHeaderEl = conflictModal.querySelector('#new-data-column h4');
             const existingDetailsEl = conflictModal.querySelector('#existing-data-column .conflict-item-details');
             const newDetailsEl = conflictModal.querySelector('#new-data-column .conflict-item-details');
             const renameSection = conflictModal.querySelector('.conflict-rename-section');
             const newNameInput = conflictModal.querySelector('#conflict-new-name');
             const footer = conflictModal.querySelector('.conflict-footer');
-            let confirmRenameHandler; // Hoist to be accessible in cleanup
+            const confirmRenameBtn = conflictModal.querySelector('#confirm-rename-btn');
+            
+            const typeKey = typeLabel === '커스텀 스킬' ? 'skills' : (typeLabel === '서포트 카드' ? 'supportCards' : 'inzaCharacters');
 
-            existingDetailsEl.innerHTML = getConflictDetailsHTML(existingItem, type);
-            newDetailsEl.innerHTML = getConflictDetailsHTML(newItem, type);
+            mainHeaderEl.textContent = `${typeLabel} 충돌 발생`;
+            existingHeaderEl.textContent = `기존 데이터: ${existingItem.name}`;
+            newHeaderEl.textContent = `가져온 데이터: ${newItem.name}`;
+            existingDetailsEl.innerHTML = getConflictDetailsHTML(existingItem, typeKey);
+            newDetailsEl.innerHTML = getConflictDetailsHTML(newItem, typeKey);
             newNameInput.value = `${newItem.name} (가져옴)`;
             renameSection.style.display = 'none';
 
-            const cleanup = () => {
-                footer.removeEventListener('click', handler);
-                if (confirmRenameHandler) {
-                    conflictModal.querySelector('#confirm-rename-btn').removeEventListener('click', confirmRenameHandler);
-                }
+            const cleanupAndResolve = (resolution) => {
                 conflictModal.classList.remove('visible');
+                resolve(resolution);
             };
 
-            const handler = (e) => {
+            footer.addEventListener('click', (e) => {
                 const action = e.target.dataset.action;
                 if (!action) return;
                 
                 if (action === 'rename') {
                     renameSection.style.display = 'flex';
                     newNameInput.focus();
-                    return; // Wait for rename confirmation
+                } else {
+                    cleanupAndResolve({ action });
                 }
-                
-                cleanup();
-                resolve({ action });
-            };
+            }, { once: true });
 
-            confirmRenameHandler = () => {
+            confirmRenameBtn.addEventListener('click', () => {
                 const newName = newNameInput.value.trim();
                 if (!newName) {
                     showToast("이름은 비워둘 수 없습니다.", "error");
                     return;
                 }
-                cleanup();
-                resolve({ action: 'rename', newName });
-            };
-
-            footer.addEventListener('click', handler);
-            conflictModal.querySelector('#confirm-rename-btn').addEventListener('click', confirmRenameHandler);
+                cleanupAndResolve({ action: 'rename', newName });
+            }, { once: true });
+            
             conflictModal.classList.add('visible');
         });
     }
@@ -1714,71 +1707,84 @@ document.addEventListener('DOMContentLoaded', () => {
             itemsToImport.skills.push(...importedObject.dependencies.skills);
         }
     
-        let addedCount = 0;
-        let skippedCount = 0;
-        let overwrittenCount = 0;
+        let stats = { added: 0, skipped: 0, overwritten: 0 };
     
-        const processItems = async (items, collectionName, idField) => {
-            for (const newItem of items) {
-                newItem.isCustom = true;
-                const existingItem = DB.user.customData[collectionName].find(i => i.name === newItem.name);
-                
-                if (existingItem) {
-                    const resolution = await resolveConflict(existingItem, newItem, collectionName);
-                    
-                    if (resolution.action === 'skip') {
-                        skippedCount++;
-                        continue;
-                    } else if (resolution.action === 'overwrite') {
-                        const index = DB.user.customData[collectionName].findIndex(i => i[idField] === existingItem[idField]);
-                        if (index > -1) {
-                            DB.user.customData[collectionName][index] = { ...newItem, [idField]: existingItem[idField] };
-                        }
-                        overwrittenCount++;
-                        
-                        if(collectionName === 'supportCards') {
-                            DB.user.myCollection.supportCards.forEach(uc => {
-                                if (uc.masterCardId === existingItem.masterCardId) uc.name = newItem.name;
-                            });
-                        } else if(collectionName === 'inzaCharacters') {
-                            DB.user.myCollection.inzaCharacters.forEach(ui => {
-                                if (ui.masterInzaId === existingItem.masterInzaId) ui.name = newItem.name;
-                            });
-                        }
+        const processItems = async (items, typeKey, idField, typeLabel) => {
+            const customDataCollection = DB.user.customData[typeKey];
+            const myCollectionKey = typeKey === 'supportCards' ? 'supportCards' : (typeKey === 'inzaCharacters' ? 'inzaCharacters' : null);
+            const userMyCollection = myCollectionKey ? DB.user.myCollection[myCollectionKey] : null;
+            const myCollectionIdField = myCollectionKey === 'supportCards' ? 'userCardId' : 'userInzaId';
+            const masterIdFieldInMyCollection = 'master' + idField.charAt(0).toUpperCase() + idField.slice(1);
 
-                    } else if (resolution.action === 'rename') {
-                        newItem.name = resolution.newName;
-                        newItem[idField] = newItem[idField] || `custom_${collectionName.slice(0, -1)}_${Date.now()}`;
-                        DB.user.customData[collectionName].push(newItem);
-                        addedCount++;
-                    }
-                } else {
-                    newItem[idField] = newItem[idField] || `custom_${collectionName.slice(0, -1)}_${Date.now()}`;
-                    DB.user.customData[collectionName].push(newItem);
-                    addedCount++;
+
+            for (let newItem of items) {
+                newItem.isCustom = true;
+                let existingItem = customDataCollection.find(i => i.name === newItem.name);
+                let resolution = { action: 'add' };
+
+                if (existingItem) {
+                    resolution = await resolveConflict(existingItem, newItem, typeLabel);
                 }
 
-                if (!existingItem || resolution?.action === 'rename') {
-                    if (collectionName === 'supportCards') {
-                        DB.user.myCollection.supportCards.push({ userCardId: `user_sc_${Date.now()}`, masterCardId: newItem.masterCardId, name: newItem.name, level: 4, hintLevel: newItem.hintLevel });
-                    } else if (collectionName === 'inzaCharacters') {
-                        DB.user.myCollection.inzaCharacters.push({ userInzaId: `user_inza_${Date.now()}`, masterCardId: newItem.masterInzaId, name: newItem.name });
+                if (resolution.action === 'skip') {
+                    stats.skipped++;
+                    continue;
+                }
+
+                if (resolution.action === 'overwrite') {
+                    stats.overwritten++;
+                    const existingIndex = customDataCollection.findIndex(i => i[idField] === existingItem[idField]);
+                    if (existingIndex > -1) {
+                         // 삭제 로직: customData와 myCollection에서 모두 삭제
+                        customDataCollection.splice(existingIndex, 1);
+                        if (userMyCollection) {
+                            DB.user.myCollection[myCollectionKey] = userMyCollection.filter(uc => uc[masterIdFieldInMyCollection] !== existingItem[idField]);
+                        }
+                    }
+                    existingItem = null; // 이제 신규 추가로 처리
+                }
+                
+                if (resolution.action === 'rename') {
+                    newItem.name = resolution.newName;
+                    existingItem = null; // 이제 신규 추가로 처리
+                }
+
+                // 신규 추가 로직 (덮어쓰기 및 이름 변경 후에도 실행됨)
+                if (!existingItem) {
+                    stats.added++;
+                    // 1. customData에 최종 아이템 추가
+                    const finalId = newItem[idField] || `custom_${typeKey.slice(0, -1)}_${Date.now()}`;
+                    newItem[idField] = finalId;
+                    customDataCollection.push(newItem);
+
+                    // 2. myCollection에 최종 정보로 추가
+                    if (userMyCollection) {
+                        const newCollectionItem = {
+                            [myCollectionIdField]: `user_${typeKey.slice(0,-11)}_${Date.now()}`,
+                            [masterIdFieldInMyCollection]: finalId,
+                            name: newItem.name
+                        };
+                         if (typeKey === 'supportCards') {
+                            newCollectionItem.level = 4;
+                            newCollectionItem.hintLevel = newItem.hintLevel;
+                        }
+                        userMyCollection.push(newCollectionItem);
                     }
                 }
             }
         };
     
-        await processItems(itemsToImport.skills, 'skills', 'skillId');
-        await processItems(itemsToImport.supportCards, 'supportCards', 'masterCardId');
-        await processItems(itemsToImport.inzaCharacters, 'inzaCharacters', 'masterInzaId');
+        await processItems(itemsToImport.skills, 'skills', 'skillId', '커스텀 스킬');
+        await processItems(itemsToImport.supportCards, 'supportCards', 'masterCardId', '서포트 카드');
+        await processItems(itemsToImport.inzaCharacters, 'inzaCharacters', 'masterInzaId', '인자');
     
         saveUserData();
         renderCollectionView('main', { activeTab: DB.user.userSettings.lastCollectionTab });
     
         let summary = [];
-        if (addedCount > 0) summary.push(`✅ ${addedCount}개 추가`);
-        if (overwrittenCount > 0) summary.push(`🔄 ${overwrittenCount}개 덮어씀`);
-        if (skippedCount > 0) summary.push(`⏭️ ${skippedCount}개 건너뜀`);
+        if (stats.added > 0) summary.push(`✅ ${stats.added}개 추가`);
+        if (stats.overwritten > 0) summary.push(`🔄 ${stats.overwritten}개 덮어씀`);
+        if (stats.skipped > 0) summary.push(`⏭️ ${stats.skipped}개 건너뜀`);
         
         if (summary.length > 0) {
             showToast(summary.join(', '), 'info', 4000);
@@ -1857,7 +1863,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('skill-search-cancel-btn').addEventListener('click', () => skillSearchModal.classList.remove('visible'));
         
-        conflictModal.querySelector('.modal-close-btn').addEventListener('click', () => conflictModal.classList.remove('visible'));
+        // conflict-modal의 닫기 버튼은 resolveConflict 함수에서 개별적으로 처리되므로 전역 리스너는 제거합니다.
     }
 
     initialize();
