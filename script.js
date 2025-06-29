@@ -281,65 +281,66 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="skill-group"><h3>${title}</h3>${finalHtml}</div>`;
     }
 
-    function createSubGroupHtml(skills) {
-        const upgradeOrder = { 'gold': 1, 'evolved': 2, 'normal': 3 };
-        const effectOrder = { 'passive': 1, 'heal': 2, 'debuff': 3, 'normal': 4 };
-        const clickAreaClass = DB.user.userSettings.clickArea === 'full' ? 'clickable' : '';
+	function createSubGroupHtml(skills) {
+		const upgradeOrder = { 'gold': 1, 'evolved': 2, 'normal': 3 };
+		const effectOrder = { 'passive': 1, 'heal': 2, 'debuff': 3, 'normal': 4 };
+		const clickAreaClass = DB.user.userSettings.clickArea === 'full' ? 'clickable' : '';
 
-        skills.sort((a, b) => {
-            const skillA_Data = getSkillData(a.skillId);
-            const skillB_Data = getSkillData(b.skillId);
-            if (!skillA_Data || !skillB_Data) return 0;
-            if (skillA_Data.isUnique !== skillB_Data.isUnique) return skillA_Data.isUnique ? -1 : 1;
-            const orderA = upgradeOrder[skillA_Data.upgradeType] || 99;
-            const orderB = upgradeOrder[skillB_Data.upgradeType] || 99;
-            if (orderA !== orderB) return orderA - orderB;
-            const effectOrderA = effectOrder[skillA_Data.effectType] || 99;
-            const effectOrderB = effectOrder[skillB_Data.effectType] || 99;
-            if (effectOrderA !== effectOrderB) return effectOrderA - effectOrderB;
-            return a.name.localeCompare(b.name, 'ko');
-        });
-        
-        return skills.map(skill => {
-            const skillData = getSkillData(skill.skillId);
-            if (!skillData) return '';
-            const state = skillCheckStates[skill.skillId] || 0;
-            const isTarget = (DB.user.targetSkills.required || []).includes(skill.skillId);
-            const sources = skill.sources.map(s => `${s.name}(${s.type}${s.level ? ` Lv.${s.level}`: ''})`).join(', ');
-            
-            let classList = `skill-item ${clickAreaClass}`;
-            
-            // 우선순위 1: 고유 스킬
-            if (skillData.isUnique) {
-                classList += ' skill-item--unique';
-            } else { // 우선순위 2: 등급별 스킬
-                if (skillData.upgradeType) classList += ` skill-item--${skillData.upgradeType}`;
-            }
-            // 커스텀 스킬 배경 (고유/등급보다 우선순위가 낮음)
-            if (skillData.isCustom) {
-                classList += ' skill-item--custom';
-            }
+		skills.sort((a, b) => {
+			const skillA_Data = getSkillData(a.skillId);
+			const skillB_Data = getSkillData(b.skillId);
+			if (!skillA_Data || !skillB_Data) return 0;
+			if (skillA_Data.isUnique !== skillB_Data.isUnique) return skillA_Data.isUnique ? -1 : 1;
+			const orderA = upgradeOrder[skillA_Data.upgradeType] || 99;
+			const orderB = upgradeOrder[skillB_Data.upgradeType] || 99;
+			if (orderA !== orderB) return orderA - orderB;
+			const effectOrderA = effectOrder[skillA_Data.effectType] || 99;
+			const effectOrderB = effectOrder[skillB_Data.effectType] || 99;
+			if (effectOrderA !== effectOrderB) return effectOrderA - effectOrderB;
+			return a.name.localeCompare(b.name, 'ko');
+		});
+		
+		return skills.map(skill => {
+			const skillData = getSkillData(skill.skillId);
+			if (!skillData) return '';
+			const state = skillCheckStates[skill.skillId] || 0;
+			const isTarget = (DB.user.targetSkills.required || []).includes(skill.skillId);
+			const sources = skill.sources.map(s => `${s.name}(${s.type}${s.level ? ` Lv.${s.level}`: ''})`).join(', ');
+			
+			let classList = `skill-item ${clickAreaClass}`;
+			
+			if (skillData.isUnique) {
+				classList += ' skill-item--unique';
+			} else {
+				if (skillData.upgradeType) classList += ` skill-item--${skillData.upgradeType}`;
+			}
+			
+			// 커스텀 스킬 배경 조건부 적용 로직
+			// showCustomHighlight 속성이 false가 아닐 경우에만(true 또는 undefined) 클래스 추가
+			if (skillData.isCustom && skillData.showCustomHighlight !== false) {
+				classList += ' skill-item--custom';
+			}
 
-            if (skillData.effectType) classList += ` skill-item--effect-${skillData.effectType}`;
-            if (isTarget) classList += ' skill-item--target';
-            
-            const tagsHtml = (skillData.tags || []).map(tag => `<span class="skill-tag">${tag}</span>`).join('');
-            const detailsHtml = skillData.evolutionCondition ? `<p><strong>진화/획득 조건:</strong> ${skillData.evolutionCondition}</p>` : '';
-            const checkboxClickClass = DB.user.userSettings.clickArea === 'full' ? 'clickable-item' : '';
-            
-            return `
-                <div id="skill-item-${skill.skillId}" class="${classList}" data-skill-id="${skill.skillId}">
-                    <div class="skill-item__main">
-                        <div class="skill-info">
-                            <div><span class="skill-name">${skillData.name}</span>${tagsHtml}</div>
-                            <div class="skill-source">${sources}</div>
-                        </div>
-                        <button class="skill-checkbox ${checkboxClickClass}" data-state="${state}"></button>
-                    </div>
-                    ${detailsHtml ? `<div class="skill-details">${detailsHtml}</div>` : ''}
-                </div>`;
-        }).join('');
-    }
+			if (skillData.effectType) classList += ` skill-item--effect-${skillData.effectType}`;
+			if (isTarget) classList += ' skill-item--target';
+			
+			const tagsHtml = (skillData.tags || []).map(tag => `<span class="skill-tag">${tag}</span>`).join('');
+			const detailsHtml = skillData.evolutionCondition ? `<p><strong>진화/획득 조건:</strong> ${skillData.evolutionCondition}</p>` : '';
+			const checkboxClickClass = DB.user.userSettings.clickArea === 'full' ? 'clickable-item' : '';
+			
+			return `
+				<div id="skill-item-${skill.skillId}" class="${classList}" data-skill-id="${skill.skillId}">
+					<div class="skill-item__main">
+						<div class="skill-info">
+							<div><span class="skill-name">${skillData.name}</span>${tagsHtml}</div>
+							<div class="skill-source">${sources}</div>
+						</div>
+						<button class="skill-checkbox ${checkboxClickClass}" data-state="${state}"></button>
+					</div>
+					${detailsHtml ? `<div class="skill-details">${detailsHtml}</div>` : ''}
+				</div>`;
+		}).join('');
+	}
 
     function updateTargetProgress(obtainableSkills) {
         const { required = [] } = DB.user.targetSkills || {};
@@ -700,6 +701,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		const categories = { common: '공용 (특정 조건 없음)', distance: '거리 (단/마/중/장거리)', style: '각질 (도주/선행 등)' };
 		const upgradeTypes = { normal: '일반 스킬', gold: '상위 스킬 (금색)', evolved: '진화 스킬 (핑크)' };
 
+		// isEdit일 때, showCustomHighlight 속성이 false가 아닌 경우(true 또는 undefined) 체크합니다.
+		// isEdit가 아닐 때(새로 생성)는 기본적으로 체크 해제 상태가 됩니다.
+		const showHighlightChecked = isEdit ? (skillData.showCustomHighlight !== false ? 'checked' : '') : '';
+
 		return `
 			<form class="collection-form-view" data-editing-id="${isEdit ? skillData.skillId : ''}">
 				<h3>${isEdit ? '커스텀 스킬 편집' : '새 커스텀 스킬 생성'}</h3>
@@ -745,6 +750,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				<div class="form-field conditional-field" style="display: ${skillData?.upgradeType === 'evolved' ? 'flex' : 'none'};">
 					<label for="custom-skill-condition">진화 조건</label>
 					<textarea id="custom-skill-condition" rows="2" placeholder="예: G1 4회 이상 승리 및 스피드 1200 이상 달성 시">${skillData?.evolutionCondition || ''}</textarea>
+				</div>
+
+				<hr style="border-color: var(--border-color); border-style: dashed; margin: 15px 0;">
+
+				<div class="form-field">
+					<label><input type="checkbox" id="custom-skill-show-highlight" ${showHighlightChecked}> ✏️ 커스텀 배경 표시 (하늘색)</label>
 				</div>
 
 				<div class="form-actions">
@@ -1087,50 +1098,52 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`저장이 완료되었습니다.\n\n단, 다음 스킬 인자는 DB에 없어 제외되었습니다:\n- ${[...new Set(allNotFound)].join('\n- ')}\n\n커스텀 스킬 탭에서 먼저 생성해주세요.`);
         }
     }
+	
+	function handleSaveCustomSkill(form) {
+		const name = form.querySelector('#custom-skill-name').value.trim();
+		if (!name) { alert('스킬 이름을 입력해주세요.'); return; }
 
-    function handleSaveCustomSkill(form) {
-        const name = form.querySelector('#custom-skill-name').value.trim();
-        if (!name) { alert('스킬 이름을 입력해주세요.'); return; }
+		const editingId = form.dataset.editingId;
+		
+		const isUnique = form.querySelector('#custom-skill-isUnique').checked;
+		const upgradeType = form.querySelector('#custom-skill-upgradeType').value;
+		const evolutionCondition = form.querySelector('#custom-skill-condition').value.trim();
+		const effectType = form.querySelector('#custom-skill-effectType').value;
+		const category = form.querySelector('#custom-skill-category').value;
+		const tags = form.querySelector('#custom-skill-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+		const showCustomHighlight = form.querySelector('#custom-skill-show-highlight').checked; // 값 읽기 추가
 
-        const editingId = form.dataset.editingId;
-        
-        const isUnique = form.querySelector('#custom-skill-isUnique').checked;
-        const upgradeType = form.querySelector('input[name="upgradeType"]:checked').value;
-        const evolutionCondition = form.querySelector('#custom-skill-condition').value.trim();
-        const effectType = form.querySelector('#custom-skill-effectType').value;
-        const category = form.querySelector('#custom-skill-category').value;
-        const tags = form.querySelector('#custom-skill-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+		const newSkillData = { 
+			name, 
+			isUnique,
+			upgradeType,
+			evolutionCondition: (upgradeType === 'evolved' && evolutionCondition) ? evolutionCondition : null,
+			effectType, 
+			category, 
+			tags,
+			showCustomHighlight, // 저장할 데이터에 추가
+			isCustom: true 
+		};
 
-        const newSkillData = { 
-            name, 
-            isUnique,
-            upgradeType,
-            evolutionCondition: (upgradeType === 'evolved' && evolutionCondition) ? evolutionCondition : null,
-            effectType, 
-            category, 
-            tags, 
-            isCustom: true 
-        };
+		const existingSkill = (DB.master.skills.find(s => s.name === name) || DB.user.customData.skills.find(s => s.name === name && s.skillId !== editingId));
+		if (existingSkill) {
+			alert(`오류: 이미 '${name}'이라는 이름의 스킬이 존재합니다.`);
+			return;
+		}
 
-        const existingSkill = (DB.master.skills.find(s => s.name === name) || DB.user.customData.skills.find(s => s.name === name && s.skillId !== editingId));
-        if (existingSkill) {
-            alert(`오류: 이미 '${name}'이라는 이름의 스킬이 존재합니다.`);
-            return;
-        }
-
-        if (editingId) {
-            const skillIndex = DB.user.customData.skills.findIndex(s => s.skillId === editingId);
-            if (skillIndex > -1) {
-                DB.user.customData.skills[skillIndex] = { ...DB.user.customData.skills[skillIndex], ...newSkillData };
-            }
-        } else {
-            const newSkillId = `custom_s_${Date.now()}`;
-            DB.user.customData.skills.push({ skillId: newSkillId, ...newSkillData });
-        }
-        
-        saveUserData();
-        renderCollectionView('main', { activeTab: 'customSkill' });
-    }
+		if (editingId) {
+			const skillIndex = DB.user.customData.skills.findIndex(s => s.skillId === editingId);
+			if (skillIndex > -1) {
+				DB.user.customData.skills[skillIndex] = { ...DB.user.customData.skills[skillIndex], ...newSkillData };
+			}
+		} else {
+			const newSkillId = `custom_s_${Date.now()}`;
+			DB.user.customData.skills.push({ skillId: newSkillId, ...newSkillData });
+		}
+		
+		saveUserData();
+		renderCollectionView('main', { activeTab: 'customSkill' });
+	}
     
     function handleDeleteCollectionItem(btn) {
         const itemEl = btn.closest('.collection-item');
