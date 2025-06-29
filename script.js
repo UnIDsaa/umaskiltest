@@ -1736,37 +1736,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         const oldId = existingItem[idField];
                         customDataCollection.splice(existingIndex, 1);
                         if (myCollectionKey) {
-                            const masterIdFieldInMyCollection = 'master' + idField.charAt(0).toUpperCase() + idField.slice(1);
-                            DB.user.myCollection[myCollectionKey] = DB.user.myCollection[myCollectionKey].filter(uc => uc[masterIdFieldInMyCollection] !== oldId);
+                            DB.user.myCollection[myCollectionKey] = DB.user.myCollection[myCollectionKey].filter(uc => uc[idField] !== oldId);
                         }
                     }
-                    existingItem = null; // 이제 신규 추가로 처리
+                    existingItem = null; 
                 }
                 
                 if (resolution.action === 'rename') {
                     newItem.name = resolution.newName;
-                    existingItem = null; // 이제 신규 추가로 처리
+                    existingItem = null; 
                 }
 
-                // 신규 추가 로직 (덮어쓰기 및 이름 변경 후에도 실행됨)
                 if (!existingItem) {
                     stats.added++;
-                    // 1. customData에 최종 아이템 추가
                     newItem[idField] = finalId;
                     customDataCollection.push(newItem);
 
-                    // 2. myCollection에 최종 정보로 추가 (가장 중요한 수정 부분)
                     if (myCollectionKey) {
                         const userMyCollection = DB.user.myCollection[myCollectionKey];
                         const myCollectionIdField = myCollectionKey === 'supportCards' ? 'userCardId' : 'userInzaId';
-                        const masterIdFieldInMyCollection = 'master' + idField.charAt(0).toUpperCase() + idField.slice(1);
-                        
-                        // 'user_sc_' 또는 'user_inza_' 부분 동적 생성
                         const idPrefix = myCollectionKey === 'supportCards' ? 'user_sc_' : 'user_inza_';
 
                         const newCollectionItem = {
                             [myCollectionIdField]: `${idPrefix}${Date.now()}`,
-                            [masterIdFieldInMyCollection]: finalId, // 수정된 부분: 이제 정확한 finalId를 참조합니다.
+                            [idField]: finalId, // ★★★ 수정된 핵심 부분 ★★★
                             name: newItem.name
                         };
                          if (typeKey === 'supportCards') {
