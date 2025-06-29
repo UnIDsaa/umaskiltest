@@ -186,15 +186,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function findMasterSc(masterCardId) {
-        return (DB.master.supportCards || []).find(c => c.masterCardId === masterCardId) || 
-               (DB.user.customData.supportCards || []).find(c => c.masterCardId === masterCardId);
-    }
-    
-    function findMasterInza(masterInzaId) {
-        return (DB.master.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId) || 
-               (DB.user.customData.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId);
-    }
+	function findMasterSc(masterCardId) {
+		// 1. 커스텀 데이터에서 먼저 찾기
+		const customSc = (DB.user.customData.supportCards || []).find(c => c.masterCardId === masterCardId);
+		if (customSc) return customSc;
+
+		// 2. 커스텀 데이터에 없으면 마스터 데이터에서 찾기
+		const masterSc = (DB.master.supportCards || []).find(c => c.masterCardId === masterCardId);
+		return masterSc;
+	}
+	
+	function findMasterInza(masterInzaId) {
+		// 1. 커스텀 데이터에서 먼저 찾기
+		const customInza = (DB.user.customData.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId);
+		if (customInza) return customInza;
+
+		// 2. 커스텀 데이터에 없으면 마스터 데이터에서 찾기
+		const masterInza = (DB.master.inzaCharacters || []).find(i => i.masterInzaId === masterInzaId);
+		return masterInza;
+	}
 
     function getCardLevelInfo(userCard) {
         if (!userCard) return { text: '', hintLevel: 0 };
@@ -496,101 +506,101 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
     // --- 컬렉션 모달 뷰 템플릿 ---
-    function getCollectionMainViewHTML(activeTab) {
-        DB.user.userSettings.lastCollectionTab = activeTab;
-        const mainContentEl = document.querySelector('#collection-modal .modal-content');
-        if (mainContentEl) mainContentEl.classList.toggle('selection-mode', isSelectionMode);
+	function getCollectionMainViewHTML(activeTab) {
+		DB.user.userSettings.lastCollectionTab = activeTab;
+		const mainContentEl = document.querySelector('#collection-modal .modal-content');
+		if (mainContentEl) mainContentEl.classList.toggle('selection-mode', isSelectionMode);
 
-        const createItemHTML = (item, typeKey) => {
-            let details = { name: '', subtext: '', id: '', type: typeKey, isCustom: false };
-    
-            if (typeKey === 'sc') { // Support Card
-                details.id = item.userCardId;
-                const masterCard = findMasterSc(item.masterCardId);
-                details.isCustom = !!masterCard?.isCustom;
-                const levelInfo = getCardLevelInfo(item);
-                details.name = item.name;
-                details.subtext = levelInfo.text;
-            } else if (typeKey === 'inza') { // Inza
-                details.id = item.userInzaId;
-                const masterInza = findMasterInza(item.masterInzaId);
-                details.isCustom = !!masterInza?.isCustom;
-                details.name = item.name;
-            } else if (typeKey === 'customSkill') { // Custom Skill
-                details.id = item.skillId;
-                details.isCustom = true;
-                details.name = item.name;
-                details.subtext = `타입: ${item.effectType || '일반'}, 카테고리: ${item.category || '공용'}`;
-            }
-            
-            const prefix = details.isCustom ? '✏️ ' : '';
-            const exportButton = details.isCustom ? `<button class="export-btn" data-action="export" title="개별 내보내기">📤</button>` : '';
-            
-            // Correct logic for view/edit button
-            const isMasterInza = typeKey === 'inza' && !details.isCustom;
-            const actionButton = isMasterInza
-                ? `<button class="view-btn" data-action="view">보기</button>`
-                : `<button class="edit-btn" data-action="edit">편집</button>`;
+		const createItemHTML = (item, typeKey) => {
+			let details = { name: '', subtext: '', id: '', type: typeKey, isCustom: false };
 
-            const isChecked = selectedForExport[details.type]?.has(details.id);
-            const checkbox = `<input type="checkbox" name="selection-${details.id}" class="selection-checkbox" data-id="${details.id}" data-type="${details.type}" ${isChecked ? 'checked' : ''}>`;
+			if (typeKey === 'sc') { // Support Card
+				details.id = item.userCardId;
+				const masterCard = findMasterSc(item.masterCardId);
+				details.isCustom = !!masterCard?.isCustom;
+				const levelInfo = getCardLevelInfo(item);
+				details.name = item.name;
+				details.subtext = levelInfo.text;
+			} else if (typeKey === 'inza') { // Inza
+				details.id = item.userInzaId;
+				const masterInza = findMasterInza(item.masterInzaId);
+				details.isCustom = !!masterInza?.isCustom;
+				details.name = item.name;
+			} else if (typeKey === 'customSkill') { // Custom Skill
+				details.id = item.skillId;
+				details.isCustom = true;
+				details.name = item.name;
+				details.subtext = `타입: ${item.effectType || '일반'}, 카테고리: ${item.category || '공용'}`;
+			}
+			
+			const prefix = details.isCustom ? '✏️ ' : '';
+			const exportButton = details.isCustom ? `<button class="export-btn" data-action="export" title="개별 내보내기">📤</button>` : '';
+			
+			const isMasterInza = typeKey === 'inza' && !details.isCustom;
+			const actionButton = isMasterInza
+				? `<button class="view-btn" data-action="view">보기</button>`
+				: `<button class="edit-btn" data-action="edit">편집</button>`;
 
-            return `
-            <div class="collection-item" data-id="${details.id}" data-type="${details.type}">
-                <div class="collection-item-info">
-                    ${checkbox}
-                    <div>
-                        <span class="name">${prefix}${details.name}</span>
-                        ${details.subtext ? `<div class="details">${details.subtext}</div>` : ''}
-                    </div>
-                </div>
-                <div class="collection-item-actions">
-                    ${exportButton}
-                    ${actionButton}
-                    <button class="delete-btn" data-action="delete">삭제</button>
-                </div>
-            </div>`;
-        };
+			const isChecked = selectedForExport[details.type]?.has(details.id);
+			const checkbox = details.isCustom ? `<input type="checkbox" name="selection-${details.id}" class="selection-checkbox" data-id="${details.id}" data-type="${details.type}" ${isChecked ? 'checked' : ''}>` : '<div class="selection-checkbox-placeholder"></div>';
 
-        const listMap = {
-            sc: (DB.user.myCollection.supportCards || []),
-            inza: (DB.user.myCollection.inzaCharacters || []),
-            customSkill: (DB.user.customData.skills || [])
-        };
-        const listContent = (listMap[activeTab] || []).map(item => createItemHTML(item, activeTab)).join('') || `<p>보유한 ${activeTab === 'sc' ? '서포트 카드' : (activeTab === 'inza' ? '인자' : '커스텀 스킬')}가 없습니다.</p>`;
 
-        const totalSelected = selectedForExport.sc.size + selectedForExport.inza.size + selectedForExport.customSkill.size;
-        
-        const addMasterButton = activeTab !== 'customSkill' ? `<button class="action-btn" data-action="addMaster">✚ 기존 ${activeTab === 'sc' ? '카드' : '인자'}에서 추가</button>` : '';
-        const addCustomButtonText = activeTab === 'customSkill' ? '✚ 새 커스텀 스킬 생성' : `✚ 직접 생성`;
+			return `
+			<div class="collection-item" data-id="${details.id}" data-type="${details.type}">
+				<div class="collection-item-info">
+					${checkbox}
+					<div>
+						<span class="name">${prefix}${details.name}</span>
+						${details.subtext ? `<div class="details">${details.subtext}</div>` : ''}
+					</div>
+				</div>
+				<div class="collection-item-actions">
+					${exportButton}
+					${actionButton}
+					<button class="delete-btn" data-action="delete">삭제</button>
+				</div>
+			</div>`;
+		};
 
-        return `
-            <div class="modal-header-actions">
-                <h2>내 컬렉션 관리</h2>
-                <div class="header-buttons">
-                    <button id="import-data-btn">📥 데이터 가져오기</button>
-                    <button id="start-selection-btn">📋 선택 모드 시작</button>
-                </div>
-            </div>
-            <div class="collection-header">
-                <div class="collection-tabs">
-                    <button class="tab-btn ${activeTab === 'sc' ? 'active' : ''}" data-tab="sc">서포트 카드</button>
-                    <button class="tab-btn ${activeTab === 'inza' ? 'active' : ''}" data-tab="inza">인자</button>
-                    <button class="tab-btn ${activeTab === 'customSkill' ? 'active' : ''}" data-tab="customSkill">커스텀 스킬</button>
-                </div>
-            </div>
-            <div class="selection-mode-controls">
-                <button class="action-btn" data-action="export-selected" ${totalSelected === 0 ? 'disabled' : ''} style="background-color: var(--success-color); color: white;">✅ 선택 완료 (${totalSelected}개)</button>
-                <button class="action-btn" data-action="cancel-selection" style="background-color: var(--gray-dark); color: white;">❌ 취소</button>
-            </div>
-            <div class="collection-main">
-                <div class="collection-actions">
-                    ${addMasterButton}
-                    <button class="action-btn" data-action="addCustom">${addCustomButtonText}</button>
-                </div>
-                <div class="collection-list">${listContent}</div>
-            </div>`;
-    }
+		const listMap = {
+			sc: (DB.user.myCollection.supportCards || []),
+			inza: (DB.user.myCollection.inzaCharacters || []),
+			customSkill: (DB.user.customData.skills || [])
+		};
+		const listContent = (listMap[activeTab] || []).map(item => createItemHTML(item, activeTab)).join('') || `<p>보유한 ${activeTab === 'sc' ? '서포트 카드' : (activeTab === 'inza' ? '인자' : '커스텀 스킬')}가 없습니다.</p>`;
+
+		const totalSelected = selectedForExport.sc.size + selectedForExport.inza.size + selectedForExport.customSkill.size;
+		
+		const addMasterButton = activeTab !== 'customSkill' ? `<button class="action-btn" data-action="addMaster">✚ 기존 ${activeTab === 'sc' ? '카드' : '인자'}에서 추가</button>` : '';
+		const addCustomButtonText = activeTab === 'customSkill' ? '✚ 새 커스텀 스킬 생성' : `✚ 직접 생성`;
+
+		return `
+			<div class="modal-header-actions">
+				<h2>내 컬렉션 관리</h2>
+				<div class="header-buttons">
+					<button id="import-data-btn">📥 데이터 가져오기</button>
+					<button id="start-selection-btn">📋 선택하여 내보내기</button>
+				</div>
+			</div>
+			<div class="collection-header">
+				<div class="collection-tabs">
+					<button class="tab-btn ${activeTab === 'sc' ? 'active' : ''}" data-tab="sc">서포트 카드</button>
+					<button class="tab-btn ${activeTab === 'inza' ? 'active' : ''}" data-tab="inza">인자</button>
+					<button class="tab-btn ${activeTab === 'customSkill' ? 'active' : ''}" data-tab="customSkill">커스텀 스킬</button>
+				</div>
+			</div>
+			<div class="selection-mode-controls">
+				<button class="action-btn" data-action="export-selected" ${totalSelected === 0 ? 'disabled' : ''} style="background-color: var(--success-color); color: white;">✅ 선택된 항목 내보내기 (${totalSelected}개)</button>
+				<button class="action-btn" data-action="cancel-selection" style="background-color: var(--gray-dark); color: white;">❌ 취소</button>
+			</div>
+			<div class="collection-main">
+				<div class="collection-actions">
+					${addMasterButton}
+					<button class="action-btn" data-action="addCustom">${addCustomButtonText}</button>
+				</div>
+				<div class="collection-list">${listContent}</div>
+			</div>`;
+	}
 
     function getEditMasterScViewHTML(cardData) {
         const levelOptions = [
