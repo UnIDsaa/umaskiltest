@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우마무스메 스킬 체크 v1.2</title>
-    <link rel="stylesheet" href="style.css?v=1.2.0">
+    <title>우마무스메 스킬 체크 v1.3</title>
+    <link rel="stylesheet" href="style.css?v=1.3.0">
 </head>
 <body>
     <div class="container">
@@ -47,7 +47,7 @@
                 </div>
                 <div id="target-progress-bar-container"><div id="target-progress-bar"></div></div>
                 <div id="target-progress-text">목표를 설정해주세요.</div>
-                <div class="target-bubbles-container">
+                <div id="target-bubbles-container" class="target-bubbles-container">
                     <details><summary>획득한 목표 (<span id="acquired-target-count">0</span>)</summary><div id="acquired-target-bubbles" class="bubbles-wrapper"></div></details>
                     <details open><summary>남은 목표 (<span id="remaining-target-count">0</span>)</summary><div id="remaining-target-bubbles" class="bubbles-wrapper"></div></details>
                 </div>
@@ -84,7 +84,7 @@
         <div class="modal-content wide">
             <button class="modal-close-btn">×</button>
             <h2>목표 스킬 설정</h2>
-            <div class="modal-body">
+            <div id="target-modal-body" class="modal-body">
                 <div class="modal-column" id="modal-all-skills"><h3>전체 스킬</h3><input type="text" id="modal-search" placeholder="스킬 검색..."><div class="skill-list"></div></div>
                 <div class="modal-column" id="modal-required-skills"><h3>필수 스킬</h3><div class="skill-list"></div></div>
                 <div class="modal-column" id="modal-ignored-skills"><h3>무시할 스킬</h3><div class="skill-list"></div></div>
@@ -116,6 +116,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.2.0"></script>
+    <script src="script.js?v=1.3.0"></script>
 </body>
 </html>
