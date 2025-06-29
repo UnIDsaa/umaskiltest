@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우마무스메 스킬 체크 v1.3</title>
-    <link rel="stylesheet" href="style.css?v=1.3.0">
+    <title>우마무스메 스킬 체크 v1.5</title>
+    <link rel="stylesheet" href="style.css?v=1.5.0">
 </head>
 <body>
     <div class="container">
@@ -14,8 +14,8 @@
                 <button id="manage-collection-btn">내 컬렉션 관리</button>
                 <button id="theme-toggle">🌙</button>
                 <input type="file" id="upload-json" accept=".json" style="display: none;">
-                <button id="upload-button">업로드</button>
-                <button id="download-button">다운로드</button>
+                <button id="upload-button">전체 업로드</button>
+                <button id="download-button">전체 다운로드</button>
                 <button id="reset-data-button" title="모든 데이터를 초기화합니다">⚠️ 초기화</button>
             </div>
         </header>
@@ -116,6 +116,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.3.0"></script>
+    <input type="file" id="import-json-input" accept=".json" style="display: none;">
+    <script src="script.js?v=1.5.0"></script>
 </body>
 </html>
