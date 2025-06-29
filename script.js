@@ -1712,10 +1712,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const processItems = async (items, typeKey, idField, typeLabel) => {
             const customDataCollection = DB.user.customData[typeKey];
             const myCollectionKey = typeKey === 'supportCards' ? 'supportCards' : (typeKey === 'inzaCharacters' ? 'inzaCharacters' : null);
-            const userMyCollection = myCollectionKey ? DB.user.myCollection[myCollectionKey] : null;
-            const myCollectionIdField = myCollectionKey === 'supportCards' ? 'userCardId' : 'userInzaId';
-            const masterIdFieldInMyCollection = 'master' + idField.charAt(0).toUpperCase() + idField.slice(1);
-
 
             for (let newItem of items) {
                 newItem.isCustom = true;
@@ -1730,15 +1726,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     stats.skipped++;
                     continue;
                 }
-
+                
+                let finalId = newItem[idField] || `custom_${typeKey.slice(0, -1)}_${Date.now()}`;
+                
                 if (resolution.action === 'overwrite') {
                     stats.overwritten++;
                     const existingIndex = customDataCollection.findIndex(i => i[idField] === existingItem[idField]);
                     if (existingIndex > -1) {
-                         // 삭제 로직: customData와 myCollection에서 모두 삭제
+                        const oldId = existingItem[idField];
                         customDataCollection.splice(existingIndex, 1);
-                        if (userMyCollection) {
-                            DB.user.myCollection[myCollectionKey] = userMyCollection.filter(uc => uc[masterIdFieldInMyCollection] !== existingItem[idField]);
+                        if (myCollectionKey) {
+                            const masterIdFieldInMyCollection = 'master' + idField.charAt(0).toUpperCase() + idField.slice(1);
+                            DB.user.myCollection[myCollectionKey] = DB.user.myCollection[myCollectionKey].filter(uc => uc[masterIdFieldInMyCollection] !== oldId);
                         }
                     }
                     existingItem = null; // 이제 신규 추가로 처리
@@ -1753,15 +1752,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!existingItem) {
                     stats.added++;
                     // 1. customData에 최종 아이템 추가
-                    const finalId = newItem[idField] || `custom_${typeKey.slice(0, -1)}_${Date.now()}`;
                     newItem[idField] = finalId;
                     customDataCollection.push(newItem);
 
-                    // 2. myCollection에 최종 정보로 추가
-                    if (userMyCollection) {
+                    // 2. myCollection에 최종 정보로 추가 (가장 중요한 수정 부분)
+                    if (myCollectionKey) {
+                        const userMyCollection = DB.user.myCollection[myCollectionKey];
+                        const myCollectionIdField = myCollectionKey === 'supportCards' ? 'userCardId' : 'userInzaId';
+                        const masterIdFieldInMyCollection = 'master' + idField.charAt(0).toUpperCase() + idField.slice(1);
+                        
+                        // 'user_sc_' 또는 'user_inza_' 부분 동적 생성
+                        const idPrefix = myCollectionKey === 'supportCards' ? 'user_sc_' : 'user_inza_';
+
                         const newCollectionItem = {
-                            [myCollectionIdField]: `user_${typeKey.slice(0,-11)}_${Date.now()}`,
-                            [masterIdFieldInMyCollection]: finalId,
+                            [myCollectionIdField]: `${idPrefix}${Date.now()}`,
+                            [masterIdFieldInMyCollection]: finalId, // 수정된 부분: 이제 정확한 finalId를 참조합니다.
                             name: newItem.name
                         };
                          if (typeKey === 'supportCards') {
