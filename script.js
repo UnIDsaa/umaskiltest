@@ -248,14 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (s.type === '시나리오' || s.type === '금색-시나리오') return 'scenario';
             return 'support';
         }));
-        if (types.size === 1) {
+
+        const typeCount = types.size;
+    
+        if (typeCount === 1) {
             if (types.has('inza')) lists.inzaOnly.push(skill);
             else if (types.has('scenario')) lists.scenarioOnly.push(skill);
-            else lists.supportOnly.push(skill);
+            else if (types.has('support')) lists.supportOnly.push(skill);
         } else {
             lists.common.push(skill);
         }
     }
+    
 
     function createGroupHtml(title, skills) {
         const subGroups = { common: [], distance: [], style: [] };
@@ -306,7 +310,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!skillData) return '';
 			const state = skillCheckStates[skill.skillId] || 0;
 			const isTarget = (DB.user.targetSkills.required || []).includes(skill.skillId);
-			const sources = skill.sources.map(s => `${s.name}(${s.type}${s.level ? ` Lv.${s.level}`: ''})`).join(', ');
+			
+			const sources = skill.sources.map(s => {
+                const isFactorType = s.type === '인자' || s.type === '고유' || s.type === '고유(인자)';
+                if (isFactorType) {
+                    return `${s.type}(${s.name})`;
+                } else {
+                    return `${s.name}(${s.type}${s.level ? ` Lv.${s.level}`: ''})`;
+                }
+            }).join(', ');
 			
 			let classList = `skill-item ${clickAreaClass}`;
 			
@@ -525,6 +537,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const addMasterButton = activeTab !== 'customSkill' ? `<button class="action-btn" data-action="addMaster">✚ 기존 ${activeTab === 'sc' ? '카드' : '인자'}에서 추가</button>` : '';
 
         return `
+            <div class="modal-header-actions">
+                <h2>내 컬렉션 관리</h2>
+                <button id="import-data-btn" data-action="import-individual">📥 데이터 가져오기</button>
+            </div>
             <div class="collection-header">
                 <div class="collection-tabs">
                     <button class="tab-btn ${activeTab === 'sc' ? 'active' : ''}" data-tab="sc">서포트 카드</button>
@@ -536,7 +552,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="collection-actions">
                     ${addMasterButton}
                     <button class="action-btn" data-action="addCustom">${actionButtonText}</button>
-                    <button class="action-btn" id="import-data-btn" data-action="import-individual">📥 개별 데이터 가져오기</button>
                 </div>
                 <div class="collection-list">${listContent}</div>
             </div>`;
@@ -874,9 +889,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(activeTab === 'sc') renderCollectionView('addCustomSc');
                     else if(activeTab === 'inza') renderCollectionView('addCustomInza');
                     else if(activeTab === 'customSkill') renderCollectionView('addCustomSkill');
-                } else if (e.target.matches('[data-action="import-individual"]')) {
-                    importJsonInput.click();
                 }
+            });
+            container.querySelector('#import-data-btn')?.addEventListener('click', () => {
+                importJsonInput.click();
             });
             container.querySelector('.collection-list')?.addEventListener('click', e => {
                 const action = e.target.dataset.action;
@@ -1379,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
     }
 
-    // --- NEW: 데이터 내보내기/가져오기 (Phase 2) ---
+    // --- 데이터 내보내기/가져오기 ---
 
     function getDependencies(item, type) {
         const customSkillIds = new Set();
@@ -1410,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = itemEl.dataset.id;
         const type = itemEl.dataset.type;
         
-        let dataToExport, dataType, dependencies, fileName;
+        let dataToExport, dataType, dependencies;
         
         if (type === 'customSkill') {
             dataType = 'customSkill';
@@ -1442,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dependencies: dependencies
         };
         
-        fileName = `uma_export_${dataType}_${dataToExport.name.replace(/\s/g, '_')}.json`;
+        const fileName = `uma_export_${dataType}_${dataToExport.name.replace(/\s/g, '_')}.json`;
         
         const dataStr = JSON.stringify(exportObject, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1491,17 +1507,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         };
 
-        // 1. 의존성 먼저 병합
         (dependencies.skills || []).forEach(skill => mergeItem(skill, 'skills'));
 
-        // 2. 메인 데이터 병합
         const mainItem = data.item;
         const mainTypePlural = data.type === 'customSkill' ? 'skills' :
                                data.type === 'customSc' ? 'supportCards' : 'inzaCharacters';
         
         const wasMainItemAdded = mergeItem(mainItem, mainTypePlural);
 
-        // 3. 컬렉션에 추가 (메인 아이템이 성공적으로 추가된 경우)
         if (wasMainItemAdded) {
             if (data.type === 'customSc') {
                 DB.user.myCollection.supportCards.push({
