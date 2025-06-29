@@ -62,7 +62,7 @@
     {"skillId": "s060", "name": "스피어", "category": "common", "upgradeType": "normal", "effectType": "normal"},
     {"skillId": "s061", "name": "근간거리", "category": "distance", "upgradeType": "normal", "effectType": "passive", "tags": ["근간거리"]},
     {"skillId": "s062", "name": "선행요령", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행"]},
-    {"skillId": "s063", "name": "빠져나갈 준비", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행"]}
+    {"skillId": "s063", "name": "빠져나갈 준비", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행"]},
     {"skillId": "s064", "name": "심호흡", "category": "distance", "upgradeType": "normal", "effectType": "heal"},
     {"skillId": "s065", "name": "도주 코너", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["도주"]},
     {"skillId": "s066", "name": "애호가", "category": "common", "upgradeType": "normal", "effectType": "normal"},
