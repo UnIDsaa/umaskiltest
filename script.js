@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createDefaultUserData() {
         return {
-            version: "1.7.0",
+            version: "1.7.1",
             userSettings: { theme: 'light', hideAcquired: false, showDetails: false, clickArea: 'checkbox', lastCollectionTab: 'sc' },
             customData: { skills: [], supportCards: [], inzaCharacters: [] },
             myCollection: { supportCards: [], inzaCharacters: [] },
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadMasterData() {
         try {
-            const response = await fetch('masterData.json?v=1.7.0');
+            const response = await fetch('masterData.json?v=1.7.1');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return await response.json();
         } catch (error) {
@@ -501,25 +501,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainContentEl = document.querySelector('#collection-modal .modal-content');
         if (mainContentEl) mainContentEl.classList.toggle('selection-mode', isSelectionMode);
 
-        const createItemHTML = (item) => {
-            let details = { name: '', subtext: '', id: '', type: '', isCustom: false };
+        const createItemHTML = (item, typeKey) => {
+            let details = { name: '', subtext: '', id: '', type: typeKey, isCustom: false };
     
-            if (item.userCardId) { // Support Card
-                details.type = 'sc';
+            if (typeKey === 'sc') { // Support Card
                 details.id = item.userCardId;
                 const masterCard = findMasterSc(item.masterCardId);
                 details.isCustom = !!masterCard?.isCustom;
                 const levelInfo = getCardLevelInfo(item);
                 details.name = item.name;
                 details.subtext = levelInfo.text;
-            } else if (item.userInzaId) { // Inza
-                details.type = 'inza';
+            } else if (typeKey === 'inza') { // Inza
                 details.id = item.userInzaId;
                 const masterInza = findMasterInza(item.masterInzaId);
                 details.isCustom = !!masterInza?.isCustom;
                 details.name = item.name;
-            } else if (item.skillId) { // Custom Skill
-                details.type = 'customSkill';
+            } else if (typeKey === 'customSkill') { // Custom Skill
                 details.id = item.skillId;
                 details.isCustom = true;
                 details.name = item.name;
@@ -528,12 +525,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const prefix = details.isCustom ? '✏️ ' : '';
             const exportButton = details.isCustom ? `<button class="export-btn" data-action="export" title="개별 내보내기">📤</button>` : '';
-            const actionButton = (details.type === 'inza' && !details.isCustom)
+            
+            // Correct logic for view/edit button
+            const isMasterInza = typeKey === 'inza' && !details.isCustom;
+            const actionButton = isMasterInza
                 ? `<button class="view-btn" data-action="view">보기</button>`
                 : `<button class="edit-btn" data-action="edit">편집</button>`;
-            
+
             const isChecked = selectedForExport[details.type]?.has(details.id);
-            const checkbox = `<input type="checkbox" class="selection-checkbox" data-id="${details.id}" data-type="${details.type}" ${isChecked ? 'checked' : ''}>`;
+            const checkbox = `<input type="checkbox" name="selection-${details.id}" class="selection-checkbox" data-id="${details.id}" data-type="${details.type}" ${isChecked ? 'checked' : ''}>`;
 
             return `
             <div class="collection-item" data-id="${details.id}" data-type="${details.type}">
@@ -557,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inza: (DB.user.myCollection.inzaCharacters || []),
             customSkill: (DB.user.customData.skills || [])
         };
-        const listContent = (listMap[activeTab] || []).map(createItemHTML).join('') || `<p>보유한 ${activeTab === 'sc' ? '서포트 카드' : (activeTab === 'inza' ? '인자' : '커스텀 스킬')}가 없습니다.</p>`;
+        const listContent = (listMap[activeTab] || []).map(item => createItemHTML(item, activeTab)).join('') || `<p>보유한 ${activeTab === 'sc' ? '서포트 카드' : (activeTab === 'inza' ? '인자' : '커스텀 스킬')}가 없습니다.</p>`;
 
         const totalSelected = selectedForExport.sc.size + selectedForExport.inza.size + selectedForExport.customSkill.size;
         
@@ -603,11 +603,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="master-sc-name">카드 이름</label>
-                        <input type="text" id="master-sc-name" value="${cardData.name}" disabled>
+                        <input type="text" id="master-sc-name" name="master-sc-name" value="${cardData.name}" disabled>
                     </div>
                     <div class="form-field">
                         <label for="master-sc-level">돌파 레벨</label>
-                        <select id="master-sc-level" required>${levelOptions}</select>
+                        <select id="master-sc-level" name="master-sc-level" required>${levelOptions}</select>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -625,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="master-inza-search">인자 이름 검색</label>
-                        <input type="text" id="master-inza-search" placeholder="마스터 인자 이름을 입력하세요...">
+                        <input type="text" id="master-inza-search" name="master-inza-search" placeholder="마스터 인자 이름을 입력하세요...">
                     </div>
                 </div>
                 <div class="inza-search-results"></div>
@@ -652,20 +652,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="custom-sc-name">카드 이름</label>
-                        <input type="text" id="custom-sc-name" required placeholder="예: 나의 최강 엘콘" value="${cardData?.name || ''}">
+                        <input type="text" id="custom-sc-name" name="custom-sc-name" required placeholder="예: 나의 최강 엘콘" value="${cardData?.name || ''}">
                     </div>
                     <div class="form-field">
                         <label for="custom-sc-hint-level">힌트 레벨</label>
-                        <select id="custom-sc-hint-level">${hintOptions}</select>
+                        <select id="custom-sc-hint-level" name="custom-sc-hint-level">${hintOptions}</select>
                     </div>
                     <div class="form-field">
                         <label for="custom-sc-hint-skills">힌트 스킬 목록</label>
-                        <textarea id="custom-sc-hint-skills" rows="4" placeholder="직접 입력하거나 아래 버튼으로 검색">${hintSkillsText}</textarea>
+                        <textarea id="custom-sc-hint-skills" name="custom-sc-hint-skills" rows="4" placeholder="직접 입력하거나 아래 버튼으로 검색">${hintSkillsText}</textarea>
                         <button type="button" class="skill-search-btn">스킬 검색</button>
                     </div>
                     <div class="form-field">
                         <label for="custom-sc-event-skills">이벤트 획득 스킬 목록</label>
-                        <textarea id="custom-sc-event-skills" rows="4" placeholder="직접 입력하거나 아래 버튼으로 검색">${eventSkillsText}</textarea>
+                        <textarea id="custom-sc-event-skills" name="custom-sc-event-skills" rows="4" placeholder="직접 입력하거나 아래 버튼으로 검색">${eventSkillsText}</textarea>
                         <button type="button" class="skill-search-btn">스킬 검색</button>
                     </div>
                 </div>
@@ -699,28 +699,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-grid">
                     <div class="form-field">
                         <label for="inza-char-name-${slotId}">캐릭터 이름</label>
-                        <input type="text" id="inza-char-name-${slotId}" placeholder="예: 키타산 블랙" value="${slotData.name || ''}" ${disabledAttr}>
+                        <input type="text" id="inza-char-name-${slotId}" name="inza-char-name-${slotId}" placeholder="예: 키타산 블랙" value="${slotData.name || ''}" ${disabledAttr}>
                     </div>
                     <div class="factor-grid">
                         <div class="form-field">
                             <label>청인자</label>
-                            <select id="inza-blue-type-${slotId}" ${disabledAttr}><option value="">-타입-</option>${factorTypes.blue.map(t=>`<option value="${t}" ${slotData.blue?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
-                            <select id="inza-blue-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.blue?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                            <select id="inza-blue-type-${slotId}" name="inza-blue-type-${slotId}" ${disabledAttr}><option value="">-타입-</option>${factorTypes.blue.map(t=>`<option value="${t}" ${slotData.blue?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+                            <select id="inza-blue-star-${slotId}" name="inza-blue-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.blue?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
                         </div>
                         <div class="form-field">
                             <label>적인자</label>
-                            <select id="inza-red-type-${slotId}" ${disabledAttr}><option value="">-타입-</option>${factorTypes.red.map(t=>`<option value="${t}" ${slotData.red?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
-                            <select id="inza-red-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.red?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                            <select id="inza-red-type-${slotId}" name="inza-red-type-${slotId}" ${disabledAttr}><option value="">-타입-</option>${factorTypes.red.map(t=>`<option value="${t}" ${slotData.red?.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+                            <select id="inza-red-star-${slotId}" name="inza-red-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.red?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
                         </div>
                         <div class="form-field">
                             <label>녹인자 (선택)</label>
-                            <input type="text" id="inza-green-skill-${slotId}" placeholder="스킬명" value="${greenSkillName}" ${disabledAttr}>
-                            <select id="inza-green-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.green?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                            <input type="text" id="inza-green-skill-${slotId}" name="inza-green-skill-${slotId}" placeholder="스킬명" value="${greenSkillName}" ${disabledAttr}>
+                            <select id="inza-green-star-${slotId}" name="inza-green-star-${slotId}" ${disabledAttr}><option value="">-★-</option>${factorTypes.star.map(s=>`<option value="${s}" ${slotData.green?.star == s ? 'selected' : ''}>${s}</option>`).join('')}</select>
                         </div>
                     </div>
                     <div class="form-field">
                         <label for="inza-skills-${slotId}">스킬 인자 목록</label>
-                        <textarea id="inza-skills-${slotId}" rows="3" placeholder="직접 입력하거나 아래 버튼으로 검색" ${isViewOnly ? 'readonly' : ''}>${getSkillNames(slotData.skillFactors)}</textarea>
+                        <textarea id="inza-skills-${slotId}" name="inza-skills-${slotId}" rows="3" placeholder="직접 입력하거나 아래 버튼으로 검색" ${isViewOnly ? 'readonly' : ''}>${getSkillNames(slotData.skillFactors)}</textarea>
                         ${!isViewOnly ? `<button type="button" class="skill-search-btn">스킬 검색</button>` : ''}
                     </div>
                 </div>
@@ -735,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3>${title}</h3>
                  <div class="form-field">
                     <label for="custom-inza-set-name">인자 세트 이름</label>
-                    <input type="text" id="custom-inza-set-name" required placeholder="예: 나의 결전용 보드카 인자" value="${inzaData?.name || ''}" ${disabledAttr}>
+                    <input type="text" id="custom-inza-set-name" name="custom-inza-set-name" required placeholder="예: 나의 결전용 보드카 인자" value="${inzaData?.name || ''}" ${disabledAttr}>
                 </div>
                 ${slotForms}
                 <div class="form-actions">
@@ -760,30 +760,30 @@ document.addEventListener('DOMContentLoaded', () => {
 				
 				<div class="form-field">
 					<label for="custom-skill-name">스킬 이름</label>
-					<input type="text" id="custom-skill-name" required value="${skillData?.name || ''}">
+					<input type="text" id="custom-skill-name" name="custom-skill-name" required value="${skillData?.name || ''}">
 				</div>
 				<div class="form-field">
-					<label><input type="checkbox" id="custom-skill-isUnique" ${skillData?.isUnique ? 'checked' : ''}> 캐릭터 고유 스킬</label>
+					<label><input type="checkbox" id="custom-skill-isUnique" name="custom-skill-isUnique" ${skillData?.isUnique ? 'checked' : ''}> 캐릭터 고유 스킬</label>
 				</div>
 
 				<div class="form-grid form-grid-cols-2">
 					<div class="form-field">
 						<label for="custom-skill-upgradeType">스킬 등급</label>
-						<select id="custom-skill-upgradeType">
+						<select id="custom-skill-upgradeType" name="custom-skill-upgradeType">
 							${Object.entries(upgradeTypes).map(([key, value]) => `<option value="${key}" ${skillData?.upgradeType === key ? 'selected' : ''}>${value}</option>`).join('')}
 						</select>
 					</div>
 
 					<div class="form-field">
 						<label for="custom-skill-effectType">아이콘 색상 (효과)</label>
-						<select id="custom-skill-effectType">
+						<select id="custom-skill-effectType" name="custom-skill-effectType">
 							${Object.entries(effectTypes).map(([key, value]) => `<option value="${key}" ${skillData?.effectType === key ? 'selected' : ''}>${value}</option>`).join('')}
 						</select>
 					</div>
 					
 					<div class="form-field">
 						<label for="custom-skill-category">목록에 표시할 그룹</label>
-						<select id="custom-skill-category">
+						<select id="custom-skill-category" name="custom-skill-category">
 							 ${Object.entries(categories).map(([key, value]) => `<option value="${key}" ${skillData?.category === key ? 'selected' : ''}>${value}</option>`).join('')}
 						</select>
 						<small>💡 스킬 목록을 정리할 폴더를 선택합니다.</small>
@@ -791,20 +791,20 @@ document.addEventListener('DOMContentLoaded', () => {
 					
 					<div class="form-field">
 						<label for="custom-skill-tags">스킬 정보 태그 (쉼표로 구분)</label>
-						<input type="text" id="custom-skill-tags" placeholder="예: 중거리, 선행, 최종 코너" value="${(skillData?.tags || []).join(', ')}">
+						<input type="text" id="custom-skill-tags" name="custom-skill-tags" placeholder="예: 중거리, 선행, 최종 코너" value="${(skillData?.tags || []).join(', ')}">
 						<small>💡 스킬의 모든 조건, 특징을 입력합니다.</small>
 					</div>
 				</div>
 
 				<div class="form-field conditional-field" style="display: ${skillData?.upgradeType === 'evolved' ? 'flex' : 'none'};">
 					<label for="custom-skill-condition">진화 조건</label>
-					<textarea id="custom-skill-condition" rows="2" placeholder="예: G1 4회 이상 승리 및 스피드 1200 이상 달성 시">${skillData?.evolutionCondition || ''}</textarea>
+					<textarea id="custom-skill-condition" name="custom-skill-condition" rows="2" placeholder="예: G1 4회 이상 승리 및 스피드 1200 이상 달성 시">${skillData?.evolutionCondition || ''}</textarea>
 				</div>
 
 				<hr style="border-color: var(--border-color); border-style: dashed; margin: 15px 0;">
 
 				<div class="form-field">
-					<label><input type="checkbox" id="custom-skill-show-highlight" ${showHighlightChecked}> ✏️ 커스텀 배경 표시 (하늘색)</label>
+					<label><input type="checkbox" id="custom-skill-show-highlight" name="custom-skill-show-highlight" ${showHighlightChecked}> ✏️ 커스텀 배경 표시 (하늘색)</label>
 				</div>
 
 				<div class="form-actions">
@@ -900,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'editMasterSc': html = getEditMasterScViewHTML(params.data); break;
             case 'addMasterInza': html = getAddMasterInzaViewHTML(); break;
             case 'viewMasterInza': html = getInzaViewHTML(params.data, true); break;
-            case 'addCustomSc': html = getCustomScViewHTML(params.data, !!params.data); break;
+            case 'addCustomSc': html = getCustomScViewHTML(params.data, params.isEdit); break;
             case 'addCustomInza': html = getInzaViewHTML(params.data, false); break;
             case 'addCustomSkill': html = getCustomSkillFormHTML(params.data); break;
         }
@@ -1496,8 +1496,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = itemEl.dataset.id;
         const type = itemEl.dataset.type;
         
-        let dataToExport, dataType, dependencies;
-        let itemForDeps;
+        let dataToExport, dataType, itemForDeps;
 
         if (type === 'customSkill') {
             dataType = 'customSkill';
@@ -1527,7 +1526,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const exportObject = {
             dataType: 'UmaSkillChecker_IndividualExport',
-            version: '1.7.0',
+            version: '1.7.1',
             data: { type: dataType, item: dataToExport },
             dependencies: { skills: dependencySkills }
         };
@@ -1574,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const exportObject = {
             dataType: 'UmaSkillChecker_BulkExport',
-            version: '1.7.0',
+            version: '1.7.1',
             data: data,
             dependencies: { skills: dependencySkills }
         };
@@ -1645,18 +1644,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const renameSection = conflictModal.querySelector('.conflict-rename-section');
             const newNameInput = conflictModal.querySelector('#conflict-new-name');
             const footer = conflictModal.querySelector('.conflict-footer');
+            let confirmRenameHandler; // Hoist to be accessible in cleanup
 
             existingDetailsEl.innerHTML = getConflictDetailsHTML(existingItem, type);
             newDetailsEl.innerHTML = getConflictDetailsHTML(newItem, type);
             newNameInput.value = `${newItem.name} (가져옴)`;
             renameSection.style.display = 'none';
 
+            const cleanup = () => {
+                footer.removeEventListener('click', handler);
+                if (confirmRenameHandler) {
+                    conflictModal.querySelector('#confirm-rename-btn').removeEventListener('click', confirmRenameHandler);
+                }
+                conflictModal.classList.remove('visible');
+            };
+
             const handler = (e) => {
                 const action = e.target.dataset.action;
                 if (!action) return;
-                
-                footer.removeEventListener('click', handler);
-                conflictModal.querySelector('#confirm-rename-btn').removeEventListener('click', renameConfirmHandler);
                 
                 if (action === 'rename') {
                     renameSection.style.display = 'flex';
@@ -1664,22 +1669,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     return; // Wait for rename confirmation
                 }
                 
-                conflictModal.classList.remove('visible');
+                cleanup();
                 resolve({ action });
             };
 
-            const renameConfirmHandler = () => {
+            confirmRenameHandler = () => {
                 const newName = newNameInput.value.trim();
                 if (!newName) {
                     showToast("이름은 비워둘 수 없습니다.", "error");
                     return;
                 }
-                conflictModal.classList.remove('visible');
+                cleanup();
                 resolve({ action: 'rename', newName });
             };
 
             footer.addEventListener('click', handler);
-            conflictModal.querySelector('#confirm-rename-btn').addEventListener('click', renameConfirmHandler);
+            conflictModal.querySelector('#confirm-rename-btn').addEventListener('click', confirmRenameHandler);
             conflictModal.classList.add('visible');
         });
     }
@@ -1705,7 +1710,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
         const processItems = async (items, collectionName, idField) => {
             for (const newItem of items) {
-                // Ensure isCustom flag is present
                 newItem.isCustom = true;
                 const existingItem = DB.user.customData[collectionName].find(i => i.name === newItem.name);
                 
@@ -1718,11 +1722,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (resolution.action === 'overwrite') {
                         const index = DB.user.customData[collectionName].findIndex(i => i[idField] === existingItem[idField]);
                         if (index > -1) {
-                            DB.user.customData[collectionName][index] = { ...newItem, [idField]: existingItem[idField] }; // Preserve original ID
+                            DB.user.customData[collectionName][index] = { ...newItem, [idField]: existingItem[idField] };
                         }
                         overwrittenCount++;
                         
-                        // Also update myCollection if it's a card or inza
                         if(collectionName === 'supportCards') {
                             DB.user.myCollection.supportCards.forEach(uc => {
                                 if (uc.masterCardId === existingItem.masterCardId) uc.name = newItem.name;
@@ -1745,12 +1748,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     addedCount++;
                 }
 
-                // If a new item was added (not overwritten), add it to the user's collection as well
                 if (!existingItem || resolution?.action === 'rename') {
                     if (collectionName === 'supportCards') {
                         DB.user.myCollection.supportCards.push({ userCardId: `user_sc_${Date.now()}`, masterCardId: newItem.masterCardId, name: newItem.name, level: 4, hintLevel: newItem.hintLevel });
                     } else if (collectionName === 'inzaCharacters') {
-                        DB.user.myCollection.inzaCharacters.push({ userInzaId: `user_inza_${Date.now()}`, masterInzaId: newItem.masterInzaId, name: newItem.name });
+                        DB.user.myCollection.inzaCharacters.push({ userInzaId: `user_inza_${Date.now()}`, masterCardId: newItem.masterInzaId, name: newItem.name });
                     }
                 }
             }
