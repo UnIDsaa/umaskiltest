@@ -12,7 +12,7 @@
     {"skillId": "s010", "name": "회심의 한걸음", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행", "선입"]},
     {"skillId": "s011", "name": "템포업", "category": "common", "upgradeType": "normal", "effectType": "normal"},
     {"skillId": "s012", "name": "물고 늘어지기", "category": "common", "upgradeType": "normal", "effectType": "normal"},
-    {"skillId": "s013", "name": "맑은 날에 강함", "category": "common", "upgradeType": "normal", "effectType": "passive"},
+    {"skillId": "s013", "name": "맑은 날", "category": "common", "upgradeType": "normal", "effectType": "passive"},
     {"skillId": "s014", "name": "네버 기브 업", "category": "common", "upgradeType": "gold", "effectType": "normal"},
     {"skillId": "s015", "name": "직선회복", "category": "common", "upgradeType": "normal", "effectType": "heal"},
     {"skillId": "s016", "name": "슬립스트림", "category": "common", "upgradeType": "normal", "effectType": "normal"},
