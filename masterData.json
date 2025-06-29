@@ -1,0 +1,111 @@
+{
+  "skills": [
+    {"skillId": "s001", "name": "호선의 프로페서", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s002", "name": "결정타", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s003", "name": "코너회복", "category": "common", "upgradeType": "normal", "effectType": "heal"},
+    {"skillId": "s004", "name": "코너달인", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s005", "name": "내리막 달인", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s006", "name": "중거리 코너", "category": "distance", "upgradeType": "normal", "effectType": "normal", "tags": ["중거리"]},
+    {"skillId": "s007", "name": "기백을 담아서", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["앞쪽각질"]},
+    {"skillId": "s008", "name": "선행 코너", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행"]},
+    {"skillId": "s009", "name": "공세", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행"]},
+    {"skillId": "s010", "name": "회심의 한걸음", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행", "선입"]},
+    {"skillId": "s011", "name": "템포업", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s012", "name": "물고 늘어지기", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s013", "name": "맑은 날에 강함", "category": "common", "upgradeType": "normal", "effectType": "passive"},
+    {"skillId": "s014", "name": "네버 기브 업", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s015", "name": "직선회복", "category": "common", "upgradeType": "normal", "effectType": "heal"},
+    {"skillId": "s016", "name": "슬립스트림", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s017", "name": "굴하지 않는 마음", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s018", "name": "쾌속", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s019", "name": "중거리 직선", "category": "distance", "upgradeType": "normal", "effectType": "normal", "tags": ["중거리"]},
+    {"skillId": "s020", "name": "치밀어오르는 열", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["중장거리", "후방각질"]},
+    {"skillId": "s021", "name": "추입 직선", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["추입"]},
+    {"skillId": "s022", "name": "이그니션", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s023", "name": "호전일식", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s024", "name": "도쿄 경기장", "category": "distance", "upgradeType": "normal", "effectType": "passive", "tags": ["도쿄"]},
+    {"skillId": "s025", "name": "직선달인", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s026", "name": "뒷심", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s027", "name": "직선 가속", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s028", "name": "마일 직선", "category": "distance", "upgradeType": "normal", "effectType": "normal", "tags": ["마일"]},
+    {"skillId": "s029", "name": "상승기류", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["마일", "후방각질"]},
+    {"skillId": "s030", "name": "추월 확정 태세", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선입"]},
+    {"skillId": "s031", "name": "뒤쳐지기 방지", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s032", "name": "신속", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s033", "name": "꼬리 올리기", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s034", "name": "장난은 끝이야", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s035", "name": "혼신의 발걸음", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["추입", "중거리"]},
+    {"skillId": "s036", "name": "상식 파괴", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s037", "name": "선점승부", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "s038", "name": "우위 형성", "category": "distance", "upgradeType": "gold", "effectType": "normal", "tags": ["마일", "중거리"]},
+    {"skillId": "s039", "name": "집중력", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s040", "name": "마일 코너", "category": "distance", "upgradeType": "normal", "effectType": "normal", "tags": ["마일"]},
+    {"skillId": "s041", "name": "기어 시프트", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s042", "name": "남김없이", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s043", "name": "확실한 발걸음", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행", "중거리"]},
+    {"skillId": "s044", "name": "단아한 발걸음", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s045", "name": "오기", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s046", "name": "투쟁심", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["중거리"]},
+    {"skillId": "s047", "name": "앞장서기", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s048", "name": "단거리 코너", "category": "distance", "upgradeType": "normal", "effectType": "normal", "tags": ["단거리"]},
+    {"skillId": "s049", "name": "버닝소울", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s050", "name": "UAF 스피어", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s051", "name": "장거리 직선", "category": "distance", "upgradeType": "normal", "effectType": "normal", "tags": ["장거리"]},
+    {"skillId": "s052", "name": "럭키세븐", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s053", "name": "선행 주저", "category": "style", "upgradeType": "normal", "effectType": "debuff", "tags": ["선행"]},
+    {"skillId": "s054", "name": "추입 주저", "category": "style", "upgradeType": "normal", "effectType": "debuff", "tags": ["추입"]},
+    {"skillId": "s055", "name": "선입 직선", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선입"]},
+    {"skillId": "s056", "name": "초반 달인", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s057", "name": "대단원", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s058", "name": "망설임 없음", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s059", "name": "진수심", "category": "common", "upgradeType": "normal", "effectType": "passive"},
+    {"skillId": "s060", "name": "스피어", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s061", "name": "근간거리", "category": "distance", "upgradeType": "normal", "effectType": "passive", "tags": ["근간거리"]},
+    {"skillId": "s062", "name": "선행요령", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["선행"]},
+    {"skillId": "s063", "name": "빠져나갈 준비", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s064", "name": "심호흡", "category": "common", "upgradeType": "normal", "effectType": "heal"},
+    {"skillId": "s065", "name": "도주 코너", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["도주"]},
+    {"skillId": "s066", "name": "애호가", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s067", "name": "터다지기", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s068", "name": "자제심", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "s069", "name": "도주요령", "category": "style", "upgradeType": "normal", "effectType": "normal", "tags": ["도주"]},
+    {"skillId": "scen001", "name": "버닝 소울", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "scen002", "name": "폭열의 반짝임!", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "scen003", "name": "전심전력", "category": "common", "upgradeType": "gold", "effectType": "normal"},
+    {"skillId": "scen004", "name": "애슬리트 정신", "category": "common", "upgradeType": "normal", "effectType": "normal"},
+    {"skillId": "test001", "name": "테스트용 진화 스킬", "category": "common", "upgradeType": "evolved", "effectType": "passive", "tags": ["테스트"], "evolutionCondition": "G1 4회 이상 승리 및 스피드 1200 이상 달성 시"},
+    {"skillId": "test002", "name": "테스트용 고유 스킬", "category": "common", "upgradeType": "normal", "effectType": "heal", "isUnique": true, "tags": ["테스트"]}
+  ],
+  "supportCards": [
+    {
+      "masterCardId": "master_sc_el", 
+      "name": "엘콘도르 파사", 
+      "goldenSkills": [{"choices": ["s001", "s002"]}], 
+      "skills": ["s003", "s004", "s005", "s006", "s007", "s008", "s009", "s010", "s011", "s012", "s013", "test001"]
+    }
+  ],
+  "inzaCharacters": [
+    {
+      "masterInzaId": "master_inza_1", 
+      "name": "마스터 인자 세트 1", 
+      "slots": {
+        "parent": {"name": "마짱", "uniqueSkillId": "test002", "skillFactors": ["s024", "s004", "s025", "s026", "s047", "s048", "s028", "s041", "s010", "s049", "s050"]}, 
+        "grandparent1": {"name": "사토노", "skillFactors": ["s003", "s015", "s019", "s051", "s052"]}, 
+        "grandparent2": {"name": "보드카", "skillFactors": ["s030", "s029", "s053", "s054", "s055"]}
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "scenarioId": "uaf", "name": "U.A.F.", 
+      "goldenSkills": [
+        {"eventName": "URA 파이널스 우승", "eventType": "fixed", "choices": ["scen002"]},
+        {"eventName": "UAF 파이널까지 전승", "eventType": "fixed", "choices": ["scen003"]}
+      ],
+      "skills": [
+        {"type": "event", "skillId": "scen001"},
+        {"type": "event", "skillId": "scen004"}
+      ]
+    }
+  ]
+}
