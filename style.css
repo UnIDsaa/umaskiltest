@@ -11,6 +11,7 @@
     --gray-dark: #6c757d;
     --danger-color: #dc3545;
     --danger-hover: #c82333;
+    --success-color: #28a745;
 
     /* Skill Tier Backgrounds */
     --tier-gold-bg: #fffbe6;
@@ -26,7 +27,7 @@
     /* Checkbox States */
     --checkbox-state0: #ccc;
     --checkbox-state1: #ffc107;
-    --checkbox-state2: #28a745;
+    --checkbox-state2: var(--success-color);
 }
 
 [data-theme="dark"] {
@@ -39,6 +40,7 @@
     --target-border: #20c997;
     --danger-color: #e74c3c;
     --danger-hover: #c0392b;
+    --success-color: #2ecc71;
 
     /* Skill Tier Backgrounds (Dark) */
     --tier-gold-bg: #4d401a;
@@ -54,12 +56,12 @@
     /* Checkbox States (Dark) */
     --checkbox-state0: #555;
     --checkbox-state1: #f39c12;
-    --checkbox-state2: #2ecc71;
+    --checkbox-state2: var(--success-color);
 }
 
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.3s, color 0.3s; line-height: 1.6; }
 .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px;}
 header h1 { font-size: 1.8em; margin: 0; }
 .top-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .top-controls button { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; background-color: var(--primary-color); color: white; font-weight: bold; transition: background-color 0.2s; }
@@ -76,7 +78,7 @@ main > section { background-color: var(--card-bg); border-radius: 8px; padding: 
 .slot { display: flex; flex-direction: column; }
 .slot label { margin-bottom: 5px; font-size: 0.9em; color: var(--gray-dark); }
 .slot select { padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-color); }
-.slot select option:disabled { color: var(--gray-dark); }
+.slot select option:disabled { color: var(--gray-dark); font-style: italic; }
 
 .target-header, .skill-list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px;}
 #open-target-modal-btn { background-color: var(--target-border); }
@@ -104,13 +106,14 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* === Skill Item Style === */
 .skill-item { border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
+.skill-item.clickable { cursor: pointer; }
 .skill-item__main { display: flex; align-items: center; justify-content: space-between; padding: 10px; transition: background-color 0.3s; position: relative; }
 .skill-item--unique { background-color: var(--tier-unique-bg); }
 .skill-item--gold { background-color: var(--tier-gold-bg); }
 .skill-item--evolved { background-color: var(--tier-evolved-bg); }
 .skill-item--custom { background-color: var(--tier-custom-bg); }
 .skill-item--target { box-shadow: 0 0 5px var(--target-border); }
-.skill-item__main::before { content: '•'; font-size: 2em; line-height: 1; margin-right: 8px; color: transparent; }
+.skill-item__main::before { content: '•'; font-size: 2.5em; line-height: 1; margin-right: 10px; color: transparent; }
 .skill-item--effect-passive .skill-item__main::before { color: var(--effect-passive-color); }
 .skill-item--effect-heal .skill-item__main::before { color: var(--effect-heal-color); }
 .skill-item--effect-debuff .skill-item__main::before { color: var(--effect-debuff-color); }
@@ -118,10 +121,14 @@ input:checked + .slider:before { transform: translateX(20px); }
 .skill-name { font-weight: bold; }
 .skill-tag { display: inline-block; background-color: var(--border-color); color: var(--gray-dark); font-size: 0.75em; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
 .skill-source { font-size: 0.8em; color: var(--gray-dark); margin-top: 2px; }
-.skill-checkbox { min-width: 24px; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 0 2px transparent; border: 2px solid var(--border-color); -webkit-appearance: none; appearance: none; outline: none; }
+.skill-checkbox { min-width: 24px; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 0 2px transparent; border: 2px solid var(--border-color); -webkit-appearance: none; appearance: none; outline: none; position: relative; }
 .skill-checkbox[data-state="0"] { background-color: var(--checkbox-state0); }
 .skill-checkbox[data-state="1"] { background-color: var(--checkbox-state1); border-color: transparent; }
-.skill-checkbox[data-state="2"] { background-color: var(--checkbox-state2); border-color: transparent; }
+.skill-checkbox[data-state="2"] { background-color: var(--checkbox-state2); border-color: transparent; font-weight: bold; color: white; }
+.skill-checkbox[data-state="2"]::before { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; line-height: 1; }
+.skill-checkbox:not(.clickable-item) { cursor: pointer; }
+.clickable-item .skill-checkbox:hover { box-shadow: none; }
+.clickable-item:hover .skill-checkbox { box-shadow: 0 0 0 2px var(--primary-color); }
 .skill-checkbox:hover { box-shadow: 0 0 0 2px var(--primary-color); }
 #acquired-skills-section[hidden] { display: none; }
 .skill-details { padding: 10px; background-color: var(--bg-color); font-size: 0.9em; display: none; }
@@ -135,45 +142,57 @@ input:checked + .slider:before { transform: translateX(20px); }
 .modal-content { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 85vh; border-radius: 8px; display: flex; flex-direction: column; position: relative; }
 .modal-content.wide { max-width: 1200px; }
 .modal-close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 2em; color: var(--text-color); cursor: pointer; z-index: 10; }
-.modal-content h2 { padding: 20px; margin: 0; border-bottom: 1px solid var(--border-color); }
+.modal-content h2, .modal-content h3 { padding: 20px; margin: 0; border-bottom: 1px solid var(--border-color); }
 
-/* Target Modal */
-.modal-body { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px; padding: 20px; overflow-y: auto; flex-grow: 1; }
-.modal-column h3 { margin-top: 0; }
+/* Target & Skill Search Modal */
+.modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; overflow-y: auto; flex-grow: 1; }
+#target-modal .modal-body { grid-template-columns: 2fr 1fr 1fr; }
+.modal-column h3 { margin-top: 0; font-size: 1.1em; padding: 0 0 10px 0; border: none; }
 .modal-column .skill-list { height: calc(100% - 80px); overflow-y: scroll; border: 1px solid var(--border-color); padding: 10px; border-radius: 4px; }
-#modal-search { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+#modal-search, #skill-search-input { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
 .modal-skill-item { display: flex; justify-content: space-between; align-items: center; padding: 5px; cursor: pointer; border-radius: 3px; }
-.modal-skill-item:hover { background-color: var(--bg-color); }
-.modal-skill-item .actions button { font-size: 0.8em; padding: 2px 6px; margin-left: 5px; }
-.modal-footer { padding: 20px; border-top: 1px solid var(--border-color); text-align: right; }
+.modal-skill-item:hover, .modal-skill-item.selected { background-color: var(--bg-color); }
+.modal-skill-item .actions button { font-size: 1.2em; padding: 2px 6px; margin-left: 5px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; }
+.modal-footer { padding: 20px; border-top: 1px solid var(--border-color); text-align: right; display: flex; justify-content: flex-end; gap: 10px; }
+.modal-footer button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+#modal-save-btn, #skill-search-confirm-btn { background-color: var(--primary-color); color: white; }
+#skill-search-cancel-btn { background-color: var(--gray-dark); color: white; }
+
 
 /* === Collection Modal Styles === */
 #collection-view-container { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;}
-.collection-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
-.collection-header h2 { margin: 0; font-size: 1.5em; }
-.collection-tabs { display: flex; gap: 5px; }
-.collection-tabs .tab-btn { padding: 8px 16px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-color); border-radius: 20px; cursor: pointer; }
-.collection-tabs .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+.collection-header { padding: 0 20px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+.collection-tabs { display: flex; }
+.collection-tabs .tab-btn { padding: 15px 25px; border: none; background-color: transparent; color: var(--gray-dark); cursor: pointer; font-size: 1.2em; font-weight: bold; border-bottom: 3px solid transparent; }
+.collection-tabs .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
 .collection-main, .collection-form-view { display: flex; flex-direction: column; padding: 20px; flex-grow: 1; overflow-y: auto; }
 .collection-actions { display: flex; gap: 15px; margin-bottom: 20px; flex-shrink: 0; }
 .collection-actions .action-btn { flex-grow: 1; padding: 12px; font-size: 1.1em; font-weight: bold; border-radius: 5px; border: 1px solid var(--primary-color); cursor: pointer; }
 .collection-list { display: flex; flex-direction: column; gap: 10px; }
-.collection-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 5px; background-color: var(--bg-color); }
+.collection-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 10px; border-radius: 5px; background-color: var(--bg-color); }
+.collection-item-info { flex-grow: 1; }
 .collection-item-info .name { font-weight: bold; }
 .collection-item-info .details { font-size: 0.9em; color: var(--gray-dark); }
 .collection-item-actions { display: flex; align-items: center; gap: 10px; }
-.collection-item-actions .delete-btn { background-color: var(--danger-color); color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+.collection-item-actions .edit-btn { background-color: var(--accent-color); color: #333; }
+.collection-item-actions .delete-btn { background-color: var(--danger-color); color: white; }
+.collection-item-actions button { border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
 
 /* Form Styles */
-.collection-form-view h3 { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
-.form-grid { display: grid; gap: 15px; }
 .form-field { display: flex; flex-direction: column; gap: 5px; }
 .form-field label { font-weight: bold; }
 .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); }
+.form-field textarea { resize: vertical; min-height: 80px; }
+.form-field .skill-search-btn { margin-top: 5px; padding: 6px 10px; align-self: flex-start; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-.form-actions button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
 .form-actions .save-btn { background-color: var(--primary-color); color: white; }
 .form-actions .cancel-btn { background-color: var(--gray-dark); color: white; }
+
+.inza-search-form .form-grid, .inza-custom-form .form-grid { display: grid; gap: 15px; }
 .inza-slot-form { border: 1px solid var(--border-color); padding: 15px; border-radius: 5px; margin-bottom: 15px; }
 .inza-slot-form h4 { margin-top: 0; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); }
 .factor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+.inza-search-results { margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; }
+.inza-search-item { padding: 10px; cursor: pointer; }
+.inza-search-item:hover { background-color: var(--bg-color); }
