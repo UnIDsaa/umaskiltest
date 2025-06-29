@@ -81,7 +81,11 @@
       "masterCardId": "master_sc_el", 
       "name": "엘콘도르 파사", 
       "goldenSkills": [{"choices": ["s001", "s002"]}], 
-      "skills": ["s003", "s004", "s005", "s006", "s007", "s008", "s009", "s010", "s011", "s012", "s013", "test001"]
+      "hintSkills": ["s003", "s004", "s005", "s006", "s007", "s008", "s009", "s010", "test001"],
+      "eventSkills": ["s011", "s012", "s013"],
+      "levelMapping": { 
+        "4": 5, "3": 3, "2": 3, "1": 2, "0": 1
+      }
     }
   ],
   "inzaCharacters": [

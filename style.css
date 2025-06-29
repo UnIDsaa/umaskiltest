@@ -9,6 +9,8 @@
     --target-border: #17a2b8;
     --gray-light: #f8f9fa;
     --gray-dark: #6c757d;
+    --danger-color: #dc3545;
+    --danger-hover: #c82333;
 
     /* Skill Tier Backgrounds */
     --tier-gold-bg: #fffbe6;
@@ -35,6 +37,8 @@
     --primary-color: #4e7eff;
     --primary-hover: #6890ff;
     --target-border: #20c997;
+    --danger-color: #e74c3c;
+    --danger-hover: #c0392b;
 
     /* Skill Tier Backgrounds (Dark) */
     --tier-gold-bg: #4d401a;
@@ -61,16 +65,19 @@ header h1 { font-size: 1.8em; margin: 0; }
 .top-controls button { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; background-color: var(--primary-color); color: white; font-weight: bold; transition: background-color 0.2s; }
 .top-controls button:hover { background-color: var(--primary-hover); }
 #theme-toggle { background: none; border: 1px solid var(--border-color); color: var(--text-color); font-size: 1.2em; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
-#reset-data-button { background-color: #dc3545; }
-#reset-data-button:hover { background-color: #c82333; }
+#reset-data-button { background-color: var(--danger-color); }
+#reset-data-button:hover { background-color: var(--danger-hover); }
 #manage-collection-btn { background-color: var(--accent-color); color: #333;}
 
 main > section { background-color: var(--card-bg); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 .deck-builder h2, .target-header h2, .skill-list-header h2 { margin-top: 0; }
-.deck-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+.deck-slots-grid { display: flex; flex-direction: column; gap: 15px; }
+.deck-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
 .slot { display: flex; flex-direction: column; }
 .slot label { margin-bottom: 5px; font-size: 0.9em; color: var(--gray-dark); }
 .slot select { padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-color); }
+.slot select option:disabled { color: var(--gray-dark); }
+
 .target-header, .skill-list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px;}
 #open-target-modal-btn { background-color: var(--target-border); }
 #target-progress-bar-container { width: 100%; background-color: var(--border-color); border-radius: 5px; overflow: hidden; height: 20px; }
@@ -95,7 +102,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 .skill-group { margin-bottom: 25px; }
 .skill-group h3, #acquired-skills-section summary { border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; margin-bottom: 15px; font-size: 1.2em; font-weight: bold; cursor: pointer; }
 
-/* === Skill Item Style (핵심 수정) === */
+/* === Skill Item Style === */
 .skill-item { border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
 .skill-item__main { display: flex; align-items: center; justify-content: space-between; padding: 10px; transition: background-color 0.3s; position: relative; }
 .skill-item--unique { background-color: var(--tier-unique-bg); }
@@ -107,7 +114,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 .skill-item--effect-passive .skill-item__main::before { color: var(--effect-passive-color); }
 .skill-item--effect-heal .skill-item__main::before { color: var(--effect-heal-color); }
 .skill-item--effect-debuff .skill-item__main::before { color: var(--effect-debuff-color); }
-
 .skill-info { flex-grow: 1; }
 .skill-name { font-weight: bold; }
 .skill-tag { display: inline-block; background-color: var(--border-color); color: var(--gray-dark); font-size: 0.75em; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
@@ -141,30 +147,33 @@ input:checked + .slider:before { transform: translateX(20px); }
 .modal-skill-item .actions button { font-size: 0.8em; padding: 2px 6px; margin-left: 5px; }
 .modal-footer { padding: 20px; border-top: 1px solid var(--border-color); text-align: right; }
 
-/* Collection Modal */
-.modal-tabs { display: flex; padding: 0 20px; border-bottom: 1px solid var(--border-color); }
-.tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 1em; border-bottom: 3px solid transparent; }
-.tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: bold; }
-.modal-body-collection { display: flex; flex-grow: 1; overflow-y: auto; padding: 20px; gap: 20px; }
-.tab-content { display: none; width: 100%; grid-template-columns: 1fr 2fr; gap: 20px; }
-.tab-content.active { display: grid; }
-.collection-forms { display: flex; flex-direction: column; gap: 25px; }
-.collection-forms form { display: flex; flex-direction: column; gap: 10px; padding: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
-.collection-forms h3 { margin-top: 0; margin-bottom: 5px; font-size: 1.1em; }
-.collection-forms input, .collection-forms select, .collection-forms textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-color); }
-.collection-forms button { align-self: flex-end; }
-.collection-list-container { display: flex; flex-direction: column; }
-.collection-list { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; padding: 10px; }
-.collection-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
-.collection-item:last-child { border-bottom: none; }
-.collection-item-info { flex-grow: 1; }
+/* === Collection Modal Styles === */
+#collection-view-container { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;}
+.collection-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+.collection-header h2 { margin: 0; font-size: 1.5em; }
+.collection-tabs { display: flex; gap: 5px; }
+.collection-tabs .tab-btn { padding: 8px 16px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-color); border-radius: 20px; cursor: pointer; }
+.collection-tabs .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+.collection-main, .collection-form-view { display: flex; flex-direction: column; padding: 20px; flex-grow: 1; overflow-y: auto; }
+.collection-actions { display: flex; gap: 15px; margin-bottom: 20px; flex-shrink: 0; }
+.collection-actions .action-btn { flex-grow: 1; padding: 12px; font-size: 1.1em; font-weight: bold; border-radius: 5px; border: 1px solid var(--primary-color); cursor: pointer; }
+.collection-list { display: flex; flex-direction: column; gap: 10px; }
+.collection-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 5px; background-color: var(--bg-color); }
 .collection-item-info .name { font-weight: bold; }
 .collection-item-info .details { font-size: 0.9em; color: var(--gray-dark); }
-.collection-item-actions { display: flex; align-items: center; gap: 5px; }
-.collection-item-actions .level-editor { display: flex; align-items: center; gap: 5px; }
-.collection-item-actions input[type="number"] { width: 50px; text-align: center; }
-.collection-item-actions button { font-size: 0.8em; padding: 4px 8px; }
-.delete-btn { background-color: #dc3545; color: white; }
-#master-inza-search-results { border: 1px solid var(--border-color); border-radius: 4px; max-height: 150px; overflow-y: auto; }
-#master-inza-search-results .result-item { padding: 8px; cursor: pointer; }
-#master-inza-search-results .result-item:hover { background-color: var(--bg-color); }
+.collection-item-actions { display: flex; align-items: center; gap: 10px; }
+.collection-item-actions .delete-btn { background-color: var(--danger-color); color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+
+/* Form Styles */
+.collection-form-view h3 { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+.form-grid { display: grid; gap: 15px; }
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-field label { font-weight: bold; }
+.form-field input, .form-field select, .form-field textarea { width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.form-actions button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+.form-actions .save-btn { background-color: var(--primary-color); color: white; }
+.form-actions .cancel-btn { background-color: var(--gray-dark); color: white; }
+.inza-slot-form { border: 1px solid var(--border-color); padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+.inza-slot-form h4 { margin-top: 0; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); }
+.factor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
